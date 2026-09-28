@@ -44,6 +44,10 @@ class MainActivity : AppCompatActivity() {
             binding.editText.setText("")
         }
 
+        binding.btnmenu.setOnClickListener {
+            startActivity(Intent(this, MenuActivity::class.java))
+        }
+
         if (
             ContextCompat.checkSelfPermission(
                 this,

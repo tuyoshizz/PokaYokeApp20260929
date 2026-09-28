@@ -17,6 +17,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import android.os.Handler
+import android.os.Looper
+
 
 class ChildListActivity : AppCompatActivity() {
 
@@ -221,7 +224,13 @@ class ChildListActivity : AppCompatActivity() {
         val target = list.firstOrNull { it.code.trim() == code }
 
         if (target == null) {
-            Toast.makeText(this, "対象外部品です", Toast.LENGTH_SHORT).show()
+            val toast = Toast.makeText(this, "対象外部品です", Toast.LENGTH_SHORT)
+            toast.show()
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                toast.cancel()
+            }, 700)
+
             return
         }
 
