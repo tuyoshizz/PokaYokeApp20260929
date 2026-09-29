@@ -138,7 +138,7 @@ class ChildListActivity : AppCompatActivity() {
             updateRemainingCount()
 
             if (list.isEmpty()) {
-                binding.emptyText.text = "対象部品が見つかりません"
+                binding.emptyText.text = "品番が登録されていません"
             }
 
         } catch (e: Exception) {

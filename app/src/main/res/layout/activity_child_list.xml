@@ -6,8 +6,6 @@
     android:layout_height="match_parent">
 
     <!-- カメラ -->
-
-    <!-- 戻るボタン -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="150dp"
@@ -17,10 +15,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 🔥 残数表示 -->
-
-    <!-- 空メッセージ -->
-
+    <!-- 戻るボタン -->
     <Button
         android:id="@+id/backButton"
         android:layout_width="wrap_content"
@@ -32,6 +27,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 🔥 残数表示 -->
     <TextView
         android:id="@+id/remainingText"
         android:layout_width="wrap_content"
@@ -45,12 +41,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/backButton" />
 
+    <!-- 空メッセージ -->
     <TextView
         android:id="@+id/emptyText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text=""
-        app:layout_constraintTop_toBottomOf="@id/backButton"
+        app:layout_constraintTop_toBottomOf="@+id/previewView"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_margin="8dp"/>
 
