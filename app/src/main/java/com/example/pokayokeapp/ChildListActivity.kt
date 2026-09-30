@@ -1,13 +1,18 @@
 package com.example.pokayokeapp
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.pokayokeapp.databinding.ActivityChildListBinding
@@ -17,8 +22,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import android.os.Handler
-import android.os.Looper
 
 
 class ChildListActivity : AppCompatActivity() {
@@ -33,6 +36,16 @@ class ChildListActivity : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var isCameraRunning = false
 
+    companion object {
+        private const val REQUEST_STORAGE = 1001
+
+        // スマホ内部ストレージのフォルダ名
+        private const val FOLDER_NAME = "PokaYoke"
+
+        // Excelファイル名
+        private const val EXCEL_FILE_NAME = "parts.xlsx"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,9 +54,15 @@ class ChildListActivity : AppCompatActivity() {
 
         parentCode = intent.getStringExtra("QR_CODE")?.trim() ?: ""
 
+        // =========================
+        // RecyclerView
+        // =========================
         adapter = ChildAdapter(list) { item ->
+
             item.checked = !item.checked
+
             adapter.notifyDataSetChanged()
+
             updateRemainingCount()
             checkCompletion()
         }
@@ -51,79 +70,226 @@ class ChildListActivity : AppCompatActivity() {
         binding.recyclerView.layoutManager = GridLayoutManager(this, 2)
         binding.recyclerView.adapter = adapter
 
+        // =========================
+        // 戻るボタン
+        // =========================
         binding.backButton.setOnClickListener {
             showBackConfirmDialog()
         }
 
+        // =========================
+        // Camera
+        // =========================
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        // 🔥 内部ストレージにコピー
-        copyExcelIfNeeded()
-
-        // 🔥 読み込み
-        loadExcelData()
-
-        initCamera()
+        // =========================
+        // Excel読み込み
+        // =========================
+        checkStoragePermission()
     }
 
-    // =========================
-    // Excelコピー（内部ストレージ）
-    // =========================
-    private fun copyExcelIfNeeded() {
+    // =========================================================
+    // ストレージ権限確認
+    // =========================================================
 
-        val file = File(filesDir, "parts.xlsx")
+    private fun checkStoragePermission() {
 
-        if (!file.exists()) {
-            try {
-                val input = assets.open("parts.xlsx")
-                val output = file.outputStream()
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
 
-                input.copyTo(output)
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
 
-                input.close()
-                output.close()
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    REQUEST_STORAGE
+                )
 
-                Log.d("FILE", "内部ストレージにコピー完了")
+            } else {
 
-            } catch (e: Exception) {
-                Log.e("FILE", "コピー失敗", e)
+                loadExcelData()
+                initCamera()
+            }
+
+        } else {
+
+            loadExcelData()
+            initCamera()
+        }
+    }
+
+    // =========================================================
+    // 権限結果
+    // =========================================================
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
+
+        if (requestCode == REQUEST_STORAGE) {
+
+            if (
+                grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
+
+                loadExcelData()
+                initCamera()
+
+            } else {
+
+                binding.emptyText.text =
+                    "ストレージへのアクセスが許可されていません"
+
+                Toast.makeText(
+                    this,
+                    "Excelを読み込むにはストレージ権限が必要です",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
 
-    // =========================
+    // =========================================================
+    // Excelファイル取得
+    // =========================================================
+
+    private fun getExcelFile(): File {
+
+        /*
+         * Android内部ストレージ
+         *
+         * /storage/emulated/0/PokaYoke/parts.xlsx
+         *
+         * PCからUSB接続すると
+         *
+         * 内部ストレージ
+         *   └ PokaYoke
+         *       └ parts.xlsx
+         *
+         * として見える場所
+         */
+
+        val storagePath = android.os.Environment
+            .getExternalStorageDirectory()
+
+        val folder = File(
+            storagePath,
+            FOLDER_NAME
+        )
+
+        if (!folder.exists()) {
+            folder.mkdirs()
+        }
+
+        return File(
+            folder,
+            EXCEL_FILE_NAME
+        )
+    }
+
+    // =========================================================
     // Excel読込
-    // =========================
+    // =========================================================
+
     private fun loadExcelData() {
 
         try {
 
-            val file = File(filesDir, "parts.xlsx")
+            val file = getExcelFile()
 
+            Log.d(
+                "Excel",
+                "Excelパス: ${file.absolutePath}"
+            )
+
+            // Excelがない場合
             if (!file.exists()) {
-                binding.emptyText.text = "Excelが存在しません"
+
+                list.clear()
+                adapter.notifyDataSetChanged()
+
+                binding.emptyText.text =
+                    """
+                    Excelファイルがありません。
+
+                    スマホをPCに接続して、
+
+                    内部ストレージ
+                    ↓
+                    PokaYoke
+
+                    に parts.xlsx をコピーしてください。
+                    """.trimIndent()
+
+                binding.remainingText.text = "残り: 0"
+
+                Log.e(
+                    "Excel",
+                    "Excelが存在しません: ${file.absolutePath}"
+                )
+
                 return
             }
 
+            Log.d(
+                "Excel",
+                "Excel読み込み開始"
+            )
+
             val inputStream = file.inputStream()
+
             val workbook = XSSFWorkbook(inputStream)
+
             val sheet = workbook.getSheetAt(0)
 
             list.clear()
 
+            // 1行目はタイトル行としてスキップ
             for (i in 1..sheet.lastRowNum) {
 
-                val row = sheet.getRow(i) ?: continue
+                val row = sheet.getRow(i)
+                    ?: continue
 
-                val p = row.getCell(0)?.toString()?.replace(".0", "") ?: ""
-                val c = row.getCell(1)?.toString()?.replace(".0", "") ?: ""
+                // A列：親品番
+                val p = getCellValue(
+                    row.getCell(0)
+                )
 
-                if (p == parentCode) {
+                // B列：子品番
+                val c = getCellValue(
+                    row.getCell(1)
+                )
+
+                // C列：名称
+                val name = getCellValue(
+                    row.getCell(2)
+                )
+
+                // D列：場所
+                val location = getCellValue(
+                    row.getCell(3)
+                )
+
+                // 親品番が一致
+                if (p.trim() == parentCode.trim()) {
+
                     list.add(
                         ChildItem(
                             code = c,
-                            name = row.getCell(2)?.toString() ?: "",
-                            location = row.getCell(3)?.toString() ?: "",
+                            name = name,
+                            location = location,
                             checked = false,
                             parentCode = p
                         )
@@ -134,80 +300,195 @@ class ChildListActivity : AppCompatActivity() {
             workbook.close()
             inputStream.close()
 
+            // RecyclerView更新
             adapter.notifyDataSetChanged()
+
+            // 残り件数
             updateRemainingCount()
 
+            // Excelはあるが対象品番がない
             if (list.isEmpty()) {
-                binding.emptyText.text = "品番が登録されていません"
+
+                binding.emptyText.text =
+                    "品番が登録されていません"
+
+            } else {
+
+                binding.emptyText.text = ""
+
+                Log.d(
+                    "Excel",
+                    "${list.size}件の部品を読み込みました"
+                )
             }
 
         } catch (e: Exception) {
-            Log.e("Excel", "読み込み失敗", e)
-            binding.emptyText.text = "Excel読み込みエラー"
+
+            Log.e(
+                "Excel",
+                "Excel読み込み失敗",
+                e
+            )
+
+            binding.emptyText.text =
+                """
+                Excel読み込みエラー
+
+                ${e.message}
+                """.trimIndent()
+
         }
     }
 
-    // =========================
+    // =========================================================
+    // Excelセルの値取得
+    // =========================================================
+
+    private fun getCellValue(
+        cell: org.apache.poi.ss.usermodel.Cell?
+    ): String {
+
+        if (cell == null) {
+            return ""
+        }
+
+        return when (cell.cellType) {
+
+            org.apache.poi.ss.usermodel.CellType.STRING -> {
+                cell.stringCellValue.trim()
+            }
+
+            org.apache.poi.ss.usermodel.CellType.NUMERIC -> {
+
+                val value = cell.numericCellValue
+
+                if (value == value.toLong().toDouble()) {
+                    value.toLong().toString()
+                } else {
+                    value.toString()
+                }
+            }
+
+            org.apache.poi.ss.usermodel.CellType.BOOLEAN -> {
+                cell.booleanCellValue.toString()
+            }
+
+            else -> {
+                cell.toString().trim()
+            }
+        }
+    }
+
+    // =========================================================
     // Camera
-    // =========================
+    // =========================================================
+
     private fun initCamera() {
 
-        val future = ProcessCameraProvider.getInstance(this)
+        val future =
+            ProcessCameraProvider.getInstance(this)
 
         future.addListener({
+
             cameraProvider = future.get()
+
             startCamera()
+
         }, ContextCompat.getMainExecutor(this))
     }
 
     private fun startCamera() {
 
-        if (isCameraRunning) return
+        if (isCameraRunning) {
+            return
+        }
 
-        val provider = cameraProvider ?: return
+        val provider =
+            cameraProvider ?: return
 
         provider.unbindAll()
 
-        val preview = Preview.Builder().build().also {
-            it.setSurfaceProvider(binding.previewView.surfaceProvider)
-        }
+        // =========================
+        // Preview
+        // =========================
 
-        val analysis = ImageAnalysis.Builder()
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .build()
+        val preview =
+            Preview.Builder()
+                .build()
+                .also {
 
-        val scanner = BarcodeScanning.getClient()
+                    it.setSurfaceProvider(
+                        binding.previewView.surfaceProvider
+                    )
+                }
 
-        analysis.setAnalyzer(cameraExecutor) { imageProxy ->
+        // =========================
+        // ImageAnalysis
+        // =========================
 
-            val mediaImage = imageProxy.image
+        val analysis =
+            ImageAnalysis.Builder()
+                .setBackpressureStrategy(
+                    ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+                )
+                .build()
+
+        // =========================
+        // QR / Barcode Scanner
+        // =========================
+
+        val scanner =
+            BarcodeScanning.getClient()
+
+        analysis.setAnalyzer(
+            cameraExecutor
+        ) { imageProxy ->
+
+            val mediaImage =
+                imageProxy.image
 
             if (mediaImage != null) {
 
-                val image = InputImage.fromMediaImage(
-                    mediaImage,
-                    imageProxy.imageInfo.rotationDegrees
-                )
+                val image =
+                    InputImage.fromMediaImage(
+                        mediaImage,
+                        imageProxy.imageInfo.rotationDegrees
+                    )
 
                 scanner.process(image)
+
                     .addOnSuccessListener { barcodes ->
 
-                        val code = barcodes.firstOrNull()?.rawValue?.trim() ?: ""
+                        val code =
+                            barcodes
+                                .firstOrNull()
+                                ?.rawValue
+                                ?.trim()
+                                ?: ""
 
                         if (code.isNotEmpty()) {
+
                             runOnUiThread {
+
                                 processScannedCode(code)
                             }
                         }
                     }
+
                     .addOnCompleteListener {
+
                         imageProxy.close()
                     }
 
             } else {
+
                 imageProxy.close()
             }
         }
+
+        // =========================
+        // Camera起動
+        // =========================
 
         provider.bindToLifecycle(
             this,
@@ -219,67 +500,159 @@ class ChildListActivity : AppCompatActivity() {
         isCameraRunning = true
     }
 
-    private fun processScannedCode(code: String) {
+    // =========================================================
+    // QRコード処理
+    // =========================================================
 
-        val target = list.firstOrNull { it.code.trim() == code }
+    private fun processScannedCode(
+        code: String
+    ) {
 
+        val target =
+            list.firstOrNull {
+
+                it.code.trim() == code.trim()
+            }
+
+        // 対象外
         if (target == null) {
-            val toast = Toast.makeText(this, "対象外部品です", Toast.LENGTH_SHORT)
+
+            val toast =
+                Toast.makeText(
+                    this,
+                    "対象外部品です",
+                    Toast.LENGTH_SHORT
+                )
+
             toast.show()
 
-            Handler(Looper.getMainLooper()).postDelayed({
-                toast.cancel()
-            }, 700)
+            Handler(
+                Looper.getMainLooper()
+            ).postDelayed(
+                {
+                    toast.cancel()
+                },
+                700
+            )
 
             return
         }
 
-        if (target.checked) return
+        // すでにチェック済み
+        if (target.checked) {
+            return
+        }
 
+        // チェック
         target.checked = true
 
         adapter.notifyDataSetChanged()
+
         updateRemainingCount()
+
         checkCompletion()
     }
 
-    // =========================
-    // 共通
-    // =========================
+    // =========================================================
+    // 残り件数
+    // =========================================================
+
     private fun updateRemainingCount() {
-        val remaining = list.count { !it.checked }
-        binding.remainingText.text = "残り: $remaining"
+
+        val remaining =
+            list.count {
+                !it.checked
+            }
+
+        binding.remainingText.text =
+            "残り: $remaining"
     }
 
+    // =========================================================
+    // 全部チェック完了
+    // =========================================================
+
     private fun checkCompletion() {
-        if (list.isNotEmpty() && list.all { it.checked }) {
-            startActivity(Intent(this, NextActivity::class.java))
+
+        if (
+            list.isNotEmpty() &&
+            list.all {
+                it.checked
+            }
+        ) {
+
+            startActivity(
+                Intent(
+                    this,
+                    NextActivity::class.java
+                )
+            )
+
             finish()
         }
     }
 
+    // =========================================================
+    // 戻る確認
+    // =========================================================
+
     private fun showBackConfirmDialog() {
+
         AlertDialog.Builder(this)
+
             .setTitle("確認")
-            .setMessage("戻りますか？")
-            .setPositiveButton("はい") { _, _ -> finish() }
-            .setNegativeButton("いいえ", null)
+
+            .setMessage(
+                "戻りますか？"
+            )
+
+            .setPositiveButton(
+                "はい"
+            ) { _, _ ->
+
+                finish()
+            }
+
+            .setNegativeButton(
+                "いいえ",
+                null
+            )
+
             .show()
     }
 
+    // =========================================================
+    // Resume
+    // =========================================================
+
     override fun onResume() {
+
         super.onResume()
+
         startCamera()
     }
 
+    // =========================================================
+    // Pause
+    // =========================================================
+
     override fun onPause() {
+
         super.onPause()
+
         cameraProvider?.unbindAll()
+
         isCameraRunning = false
     }
 
+    // =========================================================
+    // Destroy
+    // =========================================================
+
     override fun onDestroy() {
+
         super.onDestroy()
+
         cameraExecutor.shutdown()
     }
 }

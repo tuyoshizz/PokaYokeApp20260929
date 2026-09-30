@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <!-- カメラ -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- ストレージ -->
+    <!-- Galaxy S8などAndroid 9以前を想定 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -15,18 +19,33 @@
         <activity
             android:name=".MenuActivity"
             android:exported="true">
+
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
-        <!-- ★これを追加 -->
-        <activity android:name=".MainActivity" />
+        <!-- メイン画面 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
 
-        <activity android:name=".ChildListActivity"/>
-        <activity android:name=".NextActivity"/>
-        <activity android:name=".ModeActivity"/>
+        <!-- 子品番一覧画面 -->
+        <activity
+            android:name=".ChildListActivity"
+            android:exported="false" />
+
+        <!-- 完了画面 -->
+        <activity
+            android:name=".NextActivity"
+            android:exported="false" />
+
+        <!-- モード選択画面 -->
+        <activity
+            android:name=".ModeActivity"
+            android:exported="false" />
 
     </application>
 
