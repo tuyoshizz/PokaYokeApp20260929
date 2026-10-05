@@ -113,10 +113,10 @@ class ChildListActivity : AppCompatActivity() {
             // -----------------------------------------
 
             // 読み取りから1秒後に開始
-            startDelay = 1000L,
+            startDelay = 500L,
 
             // 1秒間隔
-            blinkInterval = 1000L,
+            blinkInterval = 200L,
 
             // 3回点滅
             blinkCount = 3

@@ -19,14 +19,14 @@ class ChildAdapter(
 
     // QR読み取りから点滅開始まで
     // 1000L = 1秒
-    private val startDelay: Long = 200L,
+    private val startDelay: Long = 500L,
 
     // 点滅間隔
     // 1000L = 1秒
     private val blinkInterval: Long = 200L,
 
     // 点滅回数
-    private val blinkCount: Int = 5
+    private val blinkCount: Int = 3
 
 ) : RecyclerView.Adapter<ChildAdapter.ViewHolder>() {
 

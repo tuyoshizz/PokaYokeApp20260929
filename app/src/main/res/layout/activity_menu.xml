@@ -16,7 +16,7 @@
 
     <Button
         android:id="@+id/btnReturn"
-        android:text="返却モード"
+        android:text="段替えモード"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"/>
