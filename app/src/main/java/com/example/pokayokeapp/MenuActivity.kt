@@ -22,14 +22,23 @@ class MenuActivity : AppCompatActivity() {
 
         // 2番目：段替えモード
         binding.btnReturn.setOnClickListener {
-            startActivity(Intent(this, DangaeActivity::class.java))
+            startActivity(
+                Intent(
+                    this,
+                    DangaeActivity::class.java
+                )
+            )
         }
 
-        // 3番目：特殊モード（現在は未開発）
+        // 3番目：読取履歴
         binding.btnSpecial.setOnClickListener {
-            val intent = Intent(this, ModeActivity::class.java)
-            intent.putExtra("MODE", "SPECIAL")
-            startActivity(intent)
+            startActivity(
+                Intent(
+                    this,
+                    HistoryActivity::class.java
+                )
+            )
         }
     }
 }
+

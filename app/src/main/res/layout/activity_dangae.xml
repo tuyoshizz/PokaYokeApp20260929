@@ -1,31 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/textTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="段替えモード"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
-        android:id="@+id/btnmenu"
-        android:layout_width="180dp"
-        android:layout_height="50dp"
-        android:text="メニュー画面へ"
-        android:layout_marginTop="12dp"
-        android:backgroundTint="#808080"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="parent" />
+    <!-- ===================================================== -->
+    <!-- カメラ -->
+    <!-- ===================================================== -->
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- ===================================================== -->
+    <!-- 操作エリア -->
+    <!-- ===================================================== -->
+
+    <LinearLayout
+
+        android:orientation="vertical"
+
+        android:padding="16dp"
+
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+
+        <!-- ================================================= -->
+        <!-- 説明 -->
+        <!-- ================================================= -->
+
+        <TextView
+            android:id="@+id/txtParent"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:text="段替えする品番を読み込んでください"
+
+            android:textSize="14sp"
+            android:textStyle="bold"
+
+            android:gravity="center"
+
+            android:layout_marginBottom="8dp"/>
+
+
+        <!-- ================================================= -->
+        <!-- 読み取った親品番 -->
+        <!-- ================================================= -->
+
+        <EditText
+            android:id="@+id/editText"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:hint="QR読み込み待ち"
+
+            android:inputType="text"
+
+            android:focusable="false"
+            android:clickable="false"/>
+
+
+        <!-- ================================================= -->
+        <!-- 段替開始ボタン -->
+        <!-- ================================================= -->
+
+        <Button
+            android:id="@+id/button"
+
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+
+            android:text="段替開始"
+
+            android:textSize="30sp"
+            android:textStyle="bold"
+
+            android:textColor="#FFFFFF"
+
+            android:backgroundTint="#4CAF50"
+
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"/>
+
+
+        <!-- ================================================= -->
+        <!-- メニュー -->
+        <!-- ================================================= -->
+
+        <Button
+            android:id="@+id/btnmenu"
+
+            android:layout_width="180dp"
+            android:layout_height="50dp"
+
+            android:text="メニュー画面へ"
+
+            android:layout_marginTop="0dp"
+
+            android:backgroundTint="#808080"/>
+
+    </LinearLayout>
+
+</LinearLayout>

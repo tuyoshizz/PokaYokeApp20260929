@@ -52,6 +52,28 @@
             android:name=".DangaeActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".DangaeCompareActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DangaeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DangaeCompareActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DangaePickingActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DangaeCompleteActivity"
+            android:exported="false" />
+
+
+
 
     </application>
 

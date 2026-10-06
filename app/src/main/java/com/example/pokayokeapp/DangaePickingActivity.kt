@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -17,7 +18,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.pokayokeapp.databinding.ActivityChildListBinding
+import com.example.pokayokeapp.databinding.ActivityDangaePickingBinding
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -26,18 +27,32 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 
-class ChildListActivity : AppCompatActivity() {
+class DangaePickingActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityChildListBinding
+    private lateinit var binding:
+            ActivityDangaePickingBinding
 
-    private lateinit var adapter: ChildAdapter
+    private lateinit var adapter:
+            ChildAdapter
 
     private val list =
         mutableListOf<ChildItem>()
 
-    private var parentCode: String = ""
+    // =========================================================
+    // 親品番
+    // =========================================================
 
-    private lateinit var cameraExecutor: ExecutorService
+    private var lastParentCode = ""
+
+    private var currentParentCode = ""
+
+
+    // =========================================================
+    // Camera
+    // =========================================================
+
+    private lateinit var cameraExecutor:
+            ExecutorService
 
     private var cameraProvider:
             ProcessCameraProvider? = null
@@ -45,32 +60,31 @@ class ChildListActivity : AppCompatActivity() {
     private var isCameraRunning = false
 
 
+    // =========================================================
+    // 完了フラグ
+    // =========================================================
+
+    private var isCompleted = false
+
+
+    // =========================================================
+    // 設定
+    // =========================================================
+
     companion object {
 
-        private const val REQUEST_STORAGE = 1001
-
-        // -----------------------------------------
-        // スマホ内部ストレージのフォルダ名
-        // -----------------------------------------
+        private const val REQUEST_STORAGE = 1002
 
         private const val FOLDER_NAME =
             "PokaYoke"
 
-        // -----------------------------------------
-        // Excelファイル名
-        // -----------------------------------------
-
         private const val EXCEL_FILE_NAME =
             "parts.xlsx"
 
-        // -----------------------------------------
-        // 前回生産親品番を保存するPreference
-        // -----------------------------------------
-
-        private const val PREF_NAME =
+        private const val SETTINGS_NAME =
             "PokaYokeSettings"
 
-        private const val KEY_LAST_PARENT_CODE =
+        private const val LAST_PARENT_KEY =
             "LAST_PARENT_CODE"
     }
 
@@ -86,72 +100,107 @@ class ChildListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         binding =
-            ActivityChildListBinding.inflate(
+            ActivityDangaePickingBinding.inflate(
                 layoutInflater
             )
 
         setContentView(binding.root)
 
+
         // =====================================================
         // 親品番取得
         // =====================================================
 
-        parentCode =
+        lastParentCode =
             intent
-                .getStringExtra("QR_CODE")
+                .getStringExtra(
+                    "LAST_PARENT_CODE"
+                )
                 ?.trim()
                 ?: ""
 
+        currentParentCode =
+            intent
+                .getStringExtra(
+                    "CURRENT_PARENT_CODE"
+                )
+                ?.trim()
+                ?: ""
+
+
         Log.d(
-            "PokaYoke",
-            "今回の親品番: $parentCode"
+            "Dangae",
+            "前回親品番: $lastParentCode"
         )
+
+        Log.d(
+            "Dangae",
+            "今回親品番: $currentParentCode"
+        )
+
+
+        // =====================================================
+        // タイトル
+        // =====================================================
+
+        binding.titleText.text =
+            "段替え部品供給"
+
+
+        binding.parentText.text =
+            "今回生産品番：$currentParentCode"
 
 
         // =====================================================
         // RecyclerView
         // =====================================================
 
-        adapter = ChildAdapter(
+        adapter =
+            ChildAdapter(
 
-            list = list,
+                list = list,
 
-            // -----------------------------------------
-            // 行をタップした場合
-            // -----------------------------------------
+                // -----------------------------------------
+                // 行タップ
+                // -----------------------------------------
 
-            onClick = { item ->
+                onClick = { item ->
 
-                item.checked =
-                    !item.checked
+                    // 完了後は操作しない
+                    if (isCompleted) {
+                        return@ChildAdapter
+                    }
 
-                val position =
-                    list.indexOf(item)
+                    item.checked =
+                        !item.checked
 
-                if (
-                    position != -1
-                ) {
+                    val position =
+                        list.indexOf(item)
 
-                    adapter.notifyItemChanged(
-                        position
-                    )
-                }
+                    if (
+                        position != -1
+                    ) {
 
-                updateRemainingCount()
+                        adapter.notifyItemChanged(
+                            position
+                        )
+                    }
 
-                checkCompletion()
-            },
+                    updateRemainingCount()
 
-            // -----------------------------------------
-            // 点滅設定
-            // -----------------------------------------
+                    checkCompletion()
+                },
 
-            startDelay = 500L,
+                // -----------------------------------------
+                // 点滅設定
+                // -----------------------------------------
 
-            blinkInterval = 200L,
+                startDelay = 500L,
 
-            blinkCount = 3
-        )
+                blinkInterval = 200L,
+
+                blinkCount = 3
+            )
 
 
         binding.recyclerView.layoutManager =
@@ -165,7 +214,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
         // =====================================================
-        // 戻るボタン
+        // 戻る
         // =====================================================
 
         binding.backButton.setOnClickListener {
@@ -175,7 +224,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
         // =====================================================
-        // Camera
+        // Camera Executor
         // =====================================================
 
         cameraExecutor =
@@ -183,7 +232,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
         // =====================================================
-        // Excel読み込み
+        // Excel
         // =====================================================
 
         checkStoragePermission()
@@ -191,7 +240,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // ストレージ権限確認
+    // ストレージ権限
     // =========================================================
 
     private fun checkStoragePermission() {
@@ -219,14 +268,14 @@ class ChildListActivity : AppCompatActivity() {
 
             } else {
 
-                loadExcelData()
+                loadChangeoverParts()
 
                 initCamera()
             }
 
         } else {
 
-            loadExcelData()
+            loadChangeoverParts()
 
             initCamera()
         }
@@ -260,7 +309,7 @@ class ChildListActivity : AppCompatActivity() {
                 PackageManager.PERMISSION_GRANTED
             ) {
 
-                loadExcelData()
+                loadChangeoverParts()
 
                 initCamera()
 
@@ -280,13 +329,13 @@ class ChildListActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // Excelファイル取得
+    // Excel取得
     // =========================================================
 
     private fun getExcelFile(): File {
 
         val storagePath =
-            android.os.Environment
+            Environment
                 .getExternalStorageDirectory()
 
         val folder =
@@ -310,64 +359,35 @@ class ChildListActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // Excel読込
+    // 段替え対象部品読み込み
     // =========================================================
 
-    private fun loadExcelData() {
+    private fun loadChangeoverParts() {
 
         try {
 
             val file =
                 getExcelFile()
 
-            Log.d(
-                "Excel",
-                "Excelパス: ${file.absolutePath}"
-            )
 
-
-            // -----------------------------------------
-            // Excelがない
-            // -----------------------------------------
+            // =================================================
+            // Excel存在確認
+            // =================================================
 
             if (
                 !file.exists()
             ) {
 
-                list.clear()
-
-                adapter.notifyDataSetChanged()
-
                 binding.emptyText.text =
-                    """
-                    Excelファイルがありません。
-
-                    スマホをPCに接続して、
-
-                    内部ストレージ
-                    ↓
-                    PokaYoke
-
-                    に parts.xlsx をコピーしてください。
-                    """.trimIndent()
-
-                binding.remainingText.text =
-                    "残り: 0"
-
-                Log.e(
-                    "Excel",
-                    "Excelが存在しません: ${file.absolutePath}"
-                )
+                    "Excelファイルがありません"
 
                 return
             }
 
 
-            Log.d(
-                "Excel",
-                "Excel読み込み開始"
-            )
-
+            // =================================================
+            // Excelオープン
+            // =================================================
 
             val inputStream =
                 file.inputStream()
@@ -380,14 +400,30 @@ class ChildListActivity : AppCompatActivity() {
             val sheet =
                 workbook.getSheetAt(0)
 
-            list.clear()
+
+            // =================================================
+            // 前回部品
+            //
+            // 場所 → 子品番
+            // =================================================
+
+            val lastParts =
+                mutableMapOf<String, String>()
+
+
+            // =================================================
+            // 今回部品
+            //
+            // 場所 → ChildItem
+            // =================================================
+
+            val currentParts =
+                mutableMapOf<String, ChildItem>()
 
 
             // =================================================
             // Excel読み込み
             // =================================================
-
-            // 1行目はタイトル行
 
             for (
             i in 1..sheet.lastRowNum
@@ -402,20 +438,22 @@ class ChildListActivity : AppCompatActivity() {
                 // A列：親品番
                 // -----------------------------------------
 
-                val p =
+                val parent =
                     getCellValue(
                         row.getCell(0)
                     )
+                        .trim()
 
 
                 // -----------------------------------------
                 // B列：子品番
                 // -----------------------------------------
 
-                val c =
+                val child =
                     getCellValue(
                         row.getCell(1)
                     )
+                        .trim()
 
 
                 // -----------------------------------------
@@ -426,6 +464,7 @@ class ChildListActivity : AppCompatActivity() {
                     getCellValue(
                         row.getCell(2)
                     )
+                        .trim()
 
 
                 // -----------------------------------------
@@ -436,22 +475,53 @@ class ChildListActivity : AppCompatActivity() {
                     getCellValue(
                         row.getCell(3)
                     )
+                        .trim()
 
 
                 // -----------------------------------------
-                // 親品番一致
+                // 不正データ
                 // -----------------------------------------
 
                 if (
-                    p.trim() ==
-                    parentCode.trim()
+                    parent.isEmpty() ||
+                    child.isEmpty() ||
+                    location.isEmpty()
                 ) {
 
-                    list.add(
+                    continue
+                }
 
+
+                // =================================================
+                // 前回親品番
+                // =================================================
+
+                if (
+                    parent ==
+                    lastParentCode
+                ) {
+
+                    lastParts[
+                        location
+                    ] = child
+                }
+
+
+                // =================================================
+                // 今回親品番
+                // =================================================
+
+                if (
+                    parent ==
+                    currentParentCode
+                ) {
+
+                    currentParts[
+                        location
+                    ] =
                         ChildItem(
 
-                            code = c,
+                            code = child,
 
                             name = name,
 
@@ -459,16 +529,80 @@ class ChildListActivity : AppCompatActivity() {
 
                             checked = false,
 
-                            parentCode = p
+                            parentCode = parent
                         )
-                    )
                 }
             }
 
 
+            // =================================================
+            // Excel終了
+            // =================================================
+
             workbook.close()
 
             inputStream.close()
+
+
+            // =================================================
+            // リストクリア
+            // =================================================
+
+            list.clear()
+
+
+            // =================================================
+            // 段替え対象を抽出
+            // =================================================
+
+            for (
+            entry in currentParts
+            ) {
+
+                val location =
+                    entry.key
+
+                val currentItem =
+                    entry.value
+
+                val oldCode =
+                    lastParts[
+                        location
+                    ]
+
+
+                // -----------------------------------------
+                // 前回に存在しない
+                // → 新規追加
+                // -----------------------------------------
+
+                if (
+                    oldCode == null
+                ) {
+
+                    list.add(
+                        currentItem
+                    )
+
+                    continue
+                }
+
+
+                // -----------------------------------------
+                // 前回と違う
+                // → 段替え対象
+                // -----------------------------------------
+
+                if (
+                    oldCode !=
+                    currentItem.code
+                ) {
+
+                    list.add(
+                        currentItem
+                    )
+                }
+            }
 
 
             // =================================================
@@ -486,7 +620,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
             // =================================================
-            // 対象品番なし
+            // 対象なし
             // =================================================
 
             if (
@@ -494,15 +628,15 @@ class ChildListActivity : AppCompatActivity() {
             ) {
 
                 binding.emptyText.text =
-                    "品番が登録されていません"
+                    "段替え対象の部品はありません"
 
             } else {
 
                 binding.emptyText.text = ""
 
                 Log.d(
-                    "Excel",
-                    "${list.size}件の部品を読み込みました"
+                    "Dangae",
+                    "段替え対象: ${list.size}件"
                 )
             }
 
@@ -511,8 +645,8 @@ class ChildListActivity : AppCompatActivity() {
         ) {
 
             Log.e(
-                "Excel",
-                "Excel読み込み失敗",
+                "Dangae",
+                "段替え部品読み込み失敗",
                 e
             )
 
@@ -527,7 +661,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // Excelセルの値取得
+    // Excelセル値取得
     // =========================================================
 
     private fun getCellValue(
@@ -547,6 +681,10 @@ class ChildListActivity : AppCompatActivity() {
             cell.cellType
         ) {
 
+            // =================================================
+            // 文字列
+            // =================================================
+
             org.apache.poi.ss.usermodel.CellType.STRING -> {
 
                 cell.stringCellValue
@@ -554,17 +692,23 @@ class ChildListActivity : AppCompatActivity() {
             }
 
 
+            // =================================================
+            // 数値
+            // =================================================
+
             org.apache.poi.ss.usermodel.CellType.NUMERIC -> {
 
                 val value =
                     cell.numericCellValue
+
 
                 if (
                     value ==
                     value.toLong().toDouble()
                 ) {
 
-                    value.toLong()
+                    value
+                        .toLong()
                         .toString()
 
                 } else {
@@ -574,12 +718,20 @@ class ChildListActivity : AppCompatActivity() {
             }
 
 
+            // =================================================
+            // Boolean
+            // =================================================
+
             org.apache.poi.ss.usermodel.CellType.BOOLEAN -> {
 
                 cell.booleanCellValue
                     .toString()
             }
 
+
+            // =================================================
+            // その他
+            // =================================================
 
             else -> {
 
@@ -670,7 +822,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
         // =====================================================
-        // QR / Barcode Scanner
+        // QR Scanner
         // =====================================================
 
         val scanner =
@@ -703,6 +855,15 @@ class ChildListActivity : AppCompatActivity() {
                     .addOnSuccessListener {
 
                             barcodes ->
+
+                        // -------------------------------------
+                        // 完了後はQR処理しない
+                        // -------------------------------------
+
+                        if (isCompleted) {
+                            return@addOnSuccessListener
+                        }
+
 
                         val code =
                             barcodes
@@ -766,9 +927,11 @@ class ChildListActivity : AppCompatActivity() {
         code: String
     ) {
 
-        // -----------------------------------------
-        // 対象部品を検索
-        // -----------------------------------------
+        // 完了後は処理しない
+        if (isCompleted) {
+            return
+        }
+
 
         val target =
             list.firstOrNull {
@@ -778,9 +941,9 @@ class ChildListActivity : AppCompatActivity() {
             }
 
 
-        // -----------------------------------------
+        // =====================================================
         // 対象外
-        // -----------------------------------------
+        // =====================================================
 
         if (
             target == null
@@ -789,7 +952,7 @@ class ChildListActivity : AppCompatActivity() {
             val toast =
                 Toast.makeText(
                     this,
-                    "対象外部品です",
+                    "段替え対象外の部品です",
                     Toast.LENGTH_SHORT
                 )
 
@@ -813,9 +976,9 @@ class ChildListActivity : AppCompatActivity() {
         }
 
 
-        // -----------------------------------------
-        // すでにチェック済み
-        // -----------------------------------------
+        // =====================================================
+        // すでに完了
+        // =====================================================
 
         if (
             target.checked
@@ -825,16 +988,12 @@ class ChildListActivity : AppCompatActivity() {
         }
 
 
-        // -----------------------------------------
-        // チェック済みにする
-        // -----------------------------------------
+        // =====================================================
+        // チェック
+        // =====================================================
 
         target.checked = true
 
-
-        // -----------------------------------------
-        // 対象行だけ更新
-        // -----------------------------------------
 
         val position =
             list.indexOf(target)
@@ -850,16 +1009,16 @@ class ChildListActivity : AppCompatActivity() {
         }
 
 
-        // -----------------------------------------
+        // =====================================================
         // 残り件数
-        // -----------------------------------------
+        // =====================================================
 
         updateRemainingCount()
 
 
-        // -----------------------------------------
-        // 完了チェック
-        // -----------------------------------------
+        // =====================================================
+        // 完了確認
+        // =====================================================
 
         checkCompletion()
     }
@@ -884,43 +1043,18 @@ class ChildListActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // 前回生産親品番を保存
-    // =========================================================
-
-    private fun saveLastProductionParentCode() {
-
-        val preferences =
-            getSharedPreferences(
-                PREF_NAME,
-                MODE_PRIVATE
-            )
-
-
-        val code =
-            parentCode.trim()
-
-
-        preferences
-            .edit()
-            .putString(
-                KEY_LAST_PARENT_CODE,
-                code
-            )
-            .apply()
-
-
-        Log.d(
-            "PokaYoke",
-            "前回生産親品番を保存しました: $code"
-        )
-    }
-
-
-    // =========================================================
-    // 全部チェック完了
+    // 完了確認
     // =========================================================
 
     private fun checkCompletion() {
+
+        if (
+            isCompleted
+        ) {
+
+            return
+        }
+
 
         if (
             list.isNotEmpty() &&
@@ -930,38 +1064,91 @@ class ChildListActivity : AppCompatActivity() {
             }
         ) {
 
-            // =============================================
-            // 重要
-            //
-            // 今回のピッキングが完全に終了した時点で
-            // 親品番を「前回生産品番」として保存する
-            // =============================================
+            // =================================================
+            // 完了フラグ
+            // =================================================
 
-            saveLastProductionParentCode()
+            isCompleted = true
 
 
             Log.d(
-                "PokaYoke",
-                "ピッキング完了"
-            )
-
-            Log.d(
-                "PokaYoke",
-                "次回段替え用の前回親品番: $parentCode"
+                "Dangae",
+                "段替え部品供給完了"
             )
 
 
-            // =============================================
-            // 次の画面へ
-            // =============================================
+            // =================================================
+            // ★ 今回親品番を前回生産品番として保存
+            // =================================================
 
-            startActivity(
+            if (
+                currentParentCode.isNotEmpty()
+            ) {
 
+                val preferences =
+                    getSharedPreferences(
+                        SETTINGS_NAME,
+                        MODE_PRIVATE
+                    )
+
+
+                preferences
+                    .edit()
+                    .putString(
+                        LAST_PARENT_KEY,
+                        currentParentCode
+                    )
+                    .apply()
+
+
+                Log.d(
+                    "Dangae",
+                    "LAST_PARENT_CODEを更新: $currentParentCode"
+                )
+
+            } else {
+
+                Log.e(
+                    "Dangae",
+                    "currentParentCodeが空のためLAST_PARENT_CODEを更新できません"
+                )
+            }
+
+
+            // =================================================
+            // カメラ停止
+            // =================================================
+
+            cameraProvider?.unbindAll()
+
+            isCameraRunning = false
+
+
+            // =================================================
+            // 完了画面へ
+            // =================================================
+
+            val intent =
                 Intent(
                     this,
-                    NextActivity::class.java
+                    DangaeCompleteActivity::class.java
                 )
+
+
+            // -----------------------------------------
+            // 今回親品番も完了画面へ渡す
+            // -----------------------------------------
+
+            intent.putExtra(
+                "CURRENT_PARENT_CODE",
+                currentParentCode
             )
+
+
+            startActivity(
+                intent
+            )
+
 
             finish()
         }
@@ -981,7 +1168,7 @@ class ChildListActivity : AppCompatActivity() {
             )
 
             .setMessage(
-                "戻りますか？"
+                "段替え作業を中断して戻りますか？"
             )
 
             .setPositiveButton(
@@ -1008,7 +1195,9 @@ class ChildListActivity : AppCompatActivity() {
 
         super.onResume()
 
-        startCamera()
+        if (!isCompleted) {
+            startCamera()
+        }
     }
 
 
@@ -1033,6 +1222,8 @@ class ChildListActivity : AppCompatActivity() {
     override fun onDestroy() {
 
         super.onDestroy()
+
+        cameraProvider?.unbindAll()
 
         cameraExecutor.shutdown()
     }

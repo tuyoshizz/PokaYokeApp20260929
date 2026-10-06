@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="12dp"
+    android:layout_marginBottom="6dp"
+    android:background="#EEEEEE">
+
+    <TextView
+        android:id="@+id/txtDateTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="2026/10/06 15:42:31"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="品番読取"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/txtMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="モード：段替え"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/txtParent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="親品番：123456"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/txtChild"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="子品番：789012"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/txtAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="方法：QR"
+        android:textSize="14sp" />
+
+</LinearLayout>

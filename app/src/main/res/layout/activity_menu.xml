@@ -23,7 +23,7 @@
 
     <Button
         android:id="@+id/btnSpecial"
-        android:text="特殊作業モード"
+        android:text="読取履歴"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"/>
