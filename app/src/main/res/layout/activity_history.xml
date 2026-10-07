@@ -2,44 +2,131 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="4dp">
 
-    <!-- ================================================= -->
     <!-- タイトル -->
-    <!-- ================================================= -->
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="読取履歴"
-        android:textSize="22sp"
+        android:text="読み取り履歴"
+        android:textSize="18sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:padding="16dp" />
+        android:padding="4dp" />
 
-    <!-- ================================================= -->
-    <!-- 履歴一覧 -->
-    <!-- ================================================= -->
+    <!-- 件数 -->
+    <TextView
+        android:id="@+id/emptyText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:padding="2dp" />
+
+    <!-- ============================= -->
+    <!-- 表ヘッダー -->
+    <!-- ============================= -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#CCCCCC">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2.0"
+            android:text="日時"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.7"
+            android:text="モード"
+            android:textSize="7sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.6"
+            android:text="操作"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.2"
+            android:text="親品番"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.2"
+            android:text="子品番"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.7"
+            android:text="方法"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- ============================= -->
+    <!-- 履歴 -->
+    <!-- ============================= -->
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerHistory"
+        android:id="@+id/historyRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp" />
+        android:clipToPadding="false" />
 
-    <!-- ================================================= -->
-    <!-- メニューへ戻る -->
-    <!-- ================================================= -->
+    <!-- ============================= -->
+    <!-- ボタン -->
+    <!-- ============================= -->
 
-    <Button
-        android:id="@+id/btnBack"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="メニュー画面へ"
-        android:textSize="18sp"
-        android:layout_margin="8dp" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="戻る" />
+
+        <Button
+            android:id="@+id/btnClear"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="履歴削除" />
+
+    </LinearLayout>
 
 </LinearLayout>

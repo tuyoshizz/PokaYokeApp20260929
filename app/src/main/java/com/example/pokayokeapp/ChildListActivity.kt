@@ -122,15 +122,50 @@ class ChildListActivity : AppCompatActivity() {
 
             onClick = { item ->
 
+                // -----------------------------------------
+                // チェック状態を変更
+                // -----------------------------------------
+
                 item.checked =
                     !item.checked
+
+                // -----------------------------------------
+                // 履歴記録
+                // -----------------------------------------
+
+                HistoryManager.addHistory(
+
+                    this,
+
+                    mode = "ピッキング",
+
+                    action =
+                        if (item.checked) {
+                            "部品チェック"
+                        } else {
+                            "部品チェック解除"
+                        },
+
+                    parentCode =
+                        parentCode,
+
+                    childCode =
+                        item.code,
+
+                    location =
+                        item.location,
+
+                    method = "タップ"
+                )
+
+                // -----------------------------------------
+                // 表示更新
+                // -----------------------------------------
 
                 val position =
                     list.indexOf(item)
 
-                if (
-                    position != -1
-                ) {
+                if (position != -1) {
 
                     adapter.notifyItemChanged(
                         position
@@ -141,6 +176,7 @@ class ChildListActivity : AppCompatActivity() {
 
                 checkCompletion()
             },
+
 
             // -----------------------------------------
             // 点滅設定
@@ -761,7 +797,6 @@ class ChildListActivity : AppCompatActivity() {
     // =========================================================
     // QRコード処理
     // =========================================================
-
     private fun processScannedCode(
         code: String
     ) {
@@ -795,17 +830,12 @@ class ChildListActivity : AppCompatActivity() {
 
             toast.show()
 
-
             Handler(
                 Looper.getMainLooper()
             ).postDelayed(
-
                 {
-
                     toast.cancel()
-
                 },
-
                 700
             )
 
@@ -831,6 +861,26 @@ class ChildListActivity : AppCompatActivity() {
 
         target.checked = true
 
+        HistoryManager.addHistory(
+
+            this,
+
+            mode = "ピッキング",
+
+            action = "部品チェック",
+
+            parentCode =
+                parentCode,
+
+            childCode =
+                target.code,
+
+            location =
+                target.location,
+
+            method = "QR"
+        )
+
 
         // -----------------------------------------
         // 対象行だけ更新
@@ -838,7 +888,6 @@ class ChildListActivity : AppCompatActivity() {
 
         val position =
             list.indexOf(target)
-
 
         if (
             position != -1
@@ -916,25 +965,43 @@ class ChildListActivity : AppCompatActivity() {
     }
 
 
-    // =========================================================
-    // 全部チェック完了
-    // =========================================================
+// =========================================================
+// 全部チェック完了
+// =========================================================
 
     private fun checkCompletion() {
+
+        // -----------------------------------------
+        // 全部チェックされたか確認
+        // -----------------------------------------
 
         if (
             list.isNotEmpty() &&
             list.all {
-
                 it.checked
             }
         ) {
 
             // =============================================
-            // 重要
-            //
-            // 今回のピッキングが完全に終了した時点で
-            // 親品番を「前回生産品番」として保存する
+            // ピッキング完了を履歴保存
+            // =============================================
+
+            HistoryManager.addHistory(
+
+                this,
+
+                mode = "ピッキング",
+
+                action = "ピッキング完了",
+
+                parentCode =
+                    parentCode
+            )
+
+
+            // =============================================
+            // 今回の親品番を
+            // 次回段替え用の前回生産品番として保存
             // =============================================
 
             saveLastProductionParentCode()
@@ -966,6 +1033,7 @@ class ChildListActivity : AppCompatActivity() {
             finish()
         }
     }
+
 
 
     // =========================================================

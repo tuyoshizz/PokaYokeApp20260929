@@ -10,18 +10,50 @@ class MenuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMenuBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMenuBinding.inflate(layoutInflater)
+        binding =
+            ActivityMenuBinding.inflate(
+                layoutInflater
+            )
+
         setContentView(binding.root)
 
-        // 1番目：ピッキングモード
+        // =====================================================
+        // ピッキングモード
+        // =====================================================
+
         binding.btnPicking.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
+
+            HistoryManager.addHistory(
+                this,
+                mode = "ピッキング",
+                action = "ピッキングモード開始"
+            )
+
+            startActivity(
+                Intent(
+                    this,
+                    MainActivity::class.java
+                )
+            )
         }
 
-        // 2番目：段替えモード
+
+        // =====================================================
+        // 段替えモード
+        // =====================================================
+
         binding.btnReturn.setOnClickListener {
+
+            HistoryManager.addHistory(
+                this,
+                mode = "段替え",
+                action = "段替えモード開始",
+                method = "-"
+            )
+
             startActivity(
                 Intent(
                     this,
@@ -30,8 +62,13 @@ class MenuActivity : AppCompatActivity() {
             )
         }
 
-        // 3番目：読取履歴
+
+        // =====================================================
+        // 読取履歴
+        // =====================================================
+
         binding.btnSpecial.setOnClickListener {
+
             startActivity(
                 Intent(
                     this,
@@ -41,4 +78,3 @@ class MenuActivity : AppCompatActivity() {
         }
     }
 }
-

@@ -166,7 +166,6 @@ class DangaePickingActivity : AppCompatActivity() {
 
                 onClick = { item ->
 
-                    // 完了後は操作しない
                     if (isCompleted) {
                         return@ChildAdapter
                     }
@@ -174,12 +173,35 @@ class DangaePickingActivity : AppCompatActivity() {
                     item.checked =
                         !item.checked
 
+                    HistoryManager.addHistory(
+
+                        this,
+
+                        mode = "段替え",
+
+                        action =
+                            if (item.checked) {
+                                "段替え部品チェック"
+                            } else {
+                                "段替え部品チェック解除"
+                            },
+
+                        parentCode =
+                            currentParentCode,
+
+                        childCode =
+                            item.code,
+
+                        location =
+                            item.location,
+
+                        method = "タップ"
+                    )
+
                     val position =
                         list.indexOf(item)
 
-                    if (
-                        position != -1
-                    ) {
+                    if (position != -1) {
 
                         adapter.notifyItemChanged(
                             position
@@ -994,6 +1016,27 @@ class DangaePickingActivity : AppCompatActivity() {
 
         target.checked = true
 
+        HistoryManager.addHistory(
+
+            this,
+
+            mode = "段替え",
+
+            action = "段替え部品チェック",
+
+            parentCode =
+                currentParentCode,
+
+            childCode =
+                target.code,
+
+            location =
+                target.location,
+
+            method = "QR"
+        )
+
+
 
         val position =
             list.indexOf(target)
@@ -1048,18 +1091,22 @@ class DangaePickingActivity : AppCompatActivity() {
 
     private fun checkCompletion() {
 
-        if (
-            isCompleted
-        ) {
+        // =================================================
+        // すでに完了している場合は何もしない
+        // =================================================
 
+        if (isCompleted) {
             return
         }
 
 
+        // =================================================
+        // 全部チェック完了したか確認
+        // =================================================
+
         if (
             list.isNotEmpty() &&
             list.all {
-
                 it.checked
             }
         ) {
@@ -1071,6 +1118,23 @@ class DangaePickingActivity : AppCompatActivity() {
             isCompleted = true
 
 
+            // =================================================
+            // ★ ここで初めて「段替え完了」を履歴保存
+            // =================================================
+
+            HistoryManager.addHistory(
+
+                this,
+
+                mode = "段替え",
+
+                action = "段替え完了",
+
+                parentCode =
+                    currentParentCode
+            )
+
+
             Log.d(
                 "Dangae",
                 "段替え部品供給完了"
@@ -1078,7 +1142,7 @@ class DangaePickingActivity : AppCompatActivity() {
 
 
             // =================================================
-            // ★ 今回親品番を前回生産品番として保存
+            // 今回親品番を前回生産品番として保存
             // =================================================
 
             if (
@@ -1091,7 +1155,6 @@ class DangaePickingActivity : AppCompatActivity() {
                         MODE_PRIVATE
                     )
 
-
                 preferences
                     .edit()
                     .putString(
@@ -1099,7 +1162,6 @@ class DangaePickingActivity : AppCompatActivity() {
                         currentParentCode
                     )
                     .apply()
-
 
                 Log.d(
                     "Dangae",
@@ -1134,25 +1196,17 @@ class DangaePickingActivity : AppCompatActivity() {
                     DangaeCompleteActivity::class.java
                 )
 
-
-            // -----------------------------------------
-            // 今回親品番も完了画面へ渡す
-            // -----------------------------------------
-
             intent.putExtra(
                 "CURRENT_PARENT_CODE",
                 currentParentCode
             )
 
-
-            startActivity(
-                intent
-            )
-
+            startActivity(intent)
 
             finish()
         }
     }
+
 
 
     // =========================================================

@@ -114,8 +114,21 @@ class DangaeCompareActivity : AppCompatActivity() {
 
         binding.changeoverButton.setOnClickListener {
 
+            HistoryManager.addHistory(
+
+                this,
+
+                mode = "段替え",
+
+                action = "段替え部品供給開始",
+
+                parentCode =
+                    currentParentCode
+            )
+
             openDangaePicking()
         }
+
 
 
         // =====================================================

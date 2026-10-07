@@ -2,56 +2,92 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp"
-    android:layout_marginBottom="6dp"
-    android:background="#EEEEEE">
+    android:orientation="vertical"
+    android:paddingStart="6dp"
+    android:paddingEnd="6dp"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp">
 
-    <TextView
-        android:id="@+id/txtDateTime"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="2026/10/06 15:42:31"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/txtType"
+        <TextView
+            android:id="@+id/dateTimeText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/resultText"
+            android:layout_width="45dp"
+            android:layout_height="wrap_content"
+            android:text="OK"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="品番読取"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:layout_marginTop="4dp" />
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/txtMode"
+        <TextView
+            android:id="@+id/parentCodeText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/childCodeText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="モード：段替え"
-        android:textSize="14sp" />
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/txtParent"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="親品番：123456"
-        android:textSize="14sp" />
+        <TextView
+            android:id="@+id/nameText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-    <TextView
-        android:id="@+id/txtChild"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="子品番：789012"
-        android:textSize="14sp" />
+        <TextView
+            android:id="@+id/locationText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-    <TextView
-        android:id="@+id/txtAction"
+    </LinearLayout>
+
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="方法：QR"
-        android:textSize="14sp" />
+        android:layout_height="1dp"
+        android:background="#DDDDDD" />
 
 </LinearLayout>
