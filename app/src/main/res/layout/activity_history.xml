@@ -125,14 +125,16 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="履歴削除" />
+            android:text="履歴削除"
+            android:textSize="12sp" />
 
         <Button
             android:id="@+id/btnExport"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Excel出力" />
+            android:text="Excel出力"
+            android:textSize="10sp" />
 
 
     </LinearLayout>

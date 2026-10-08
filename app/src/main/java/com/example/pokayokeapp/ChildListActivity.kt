@@ -85,6 +85,7 @@ class ChildListActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
+
         binding =
             ActivityChildListBinding.inflate(
                 layoutInflater
@@ -92,19 +93,50 @@ class ChildListActivity : AppCompatActivity() {
 
         setContentView(binding.root)
 
+
         // =====================================================
         // 親品番取得
         // =====================================================
 
-        parentCode =
+        val qrCode =
             intent
                 .getStringExtra("QR_CODE")
                 ?.trim()
                 ?: ""
 
+
+        parentCode =
+            extractParentCode(qrCode)
+
+
         Log.d(
             "PokaYoke",
-            "今回の親品番: $parentCode"
+            "QR読み取り結果: [$qrCode]"
+        )
+
+
+        Log.d(
+            "PokaYoke",
+            "今回の親品番: [$parentCode]"
+        )
+
+
+        // =====================================================
+        // 親品番読み取り履歴
+        // =====================================================
+
+        HistoryManager.addHistory(
+
+            this,
+
+            mode = "ピッキング",
+
+            action = "親品番読取",
+
+            parentCode =
+                parentCode,
+
+            method = "QR"
         )
 
 
@@ -112,82 +144,109 @@ class ChildListActivity : AppCompatActivity() {
         // RecyclerView
         // =====================================================
 
-        adapter = ChildAdapter(
+        adapter =
+            ChildAdapter(
 
-            list = list,
-
-            // -----------------------------------------
-            // 行をタップした場合
-            // -----------------------------------------
-
-            onClick = { item ->
+                list = list,
 
                 // -----------------------------------------
-                // チェック状態を変更
+                // 行をタップした場合
                 // -----------------------------------------
 
-                item.checked =
-                    !item.checked
+                onClick = { item ->
 
-                // -----------------------------------------
-                // 履歴記録
-                // -----------------------------------------
+                    // -----------------------------------------
+                    // チェック状態変更
+                    // -----------------------------------------
 
-                HistoryManager.addHistory(
+                    item.checked =
+                        !item.checked
 
-                    this,
 
-                    mode = "ピッキング",
+                    // =================================================
+                    // ★ 点滅開始時刻
+                    // =================================================
 
-                    action =
-                        if (item.checked) {
-                            "部品チェック"
-                        } else {
-                            "部品チェック解除"
-                        },
+                    if (item.checked) {
 
-                    parentCode =
-                        parentCode,
+                        // チェックした瞬間を記録
 
-                    childCode =
-                        item.code,
+                        item.blinkStartTime =
+                            System.currentTimeMillis()
 
-                    location =
-                        item.location,
+                    } else {
 
-                    method = "タップ"
-                )
+                        // チェック解除
 
-                // -----------------------------------------
-                // 表示更新
-                // -----------------------------------------
+                        item.blinkStartTime =
+                            0L
+                    }
 
-                val position =
-                    list.indexOf(item)
 
-                if (position != -1) {
+                    // -----------------------------------------
+                    // 履歴記録
+                    // -----------------------------------------
 
-                    adapter.notifyItemChanged(
-                        position
+                    HistoryManager.addHistory(
+
+                        this,
+
+                        mode = "ピッキング",
+
+                        action =
+                            if (item.checked) {
+                                "部品チェック"
+                            } else {
+                                "部品チェック解除"
+                            },
+
+                        parentCode =
+                            parentCode,
+
+                        childCode =
+                            item.code,
+
+                        location =
+                            item.location,
+
+                        method = "タップ"
                     )
-                }
-
-                updateRemainingCount()
-
-                checkCompletion()
-            },
 
 
-            // -----------------------------------------
-            // 点滅設定
-            // -----------------------------------------
+                    // -----------------------------------------
+                    // 表示更新
+                    // -----------------------------------------
 
-            startDelay = 500L,
+                    val position =
+                        list.indexOf(item)
 
-            blinkInterval = 200L,
 
-            blinkCount = 3
-        )
+                    if (
+                        position != -1
+                    ) {
+
+                        adapter.notifyItemChanged(
+                            position
+                        )
+                    }
+
+
+                    updateRemainingCount()
+
+                    checkCompletion()
+                },
+
+
+                // -----------------------------------------
+                // 点滅設定
+                // -----------------------------------------
+
+                startDelay = 500L,
+
+                blinkInterval = 200L,
+
+                blinkCount = 3
+            )
 
 
         binding.recyclerView.layoutManager =
@@ -195,6 +254,7 @@ class ChildListActivity : AppCompatActivity() {
                 this,
                 2
             )
+
 
         binding.recyclerView.adapter =
             adapter
@@ -227,6 +287,76 @@ class ChildListActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // QRコードから親品番を抽出
+    // =========================================================
+
+    private fun extractParentCode(
+        code: String
+    ): String {
+
+        val text =
+            code.trim()
+
+
+        Log.d(
+            "PokaYoke",
+            "親品番抽出前QR: [$text]"
+        )
+
+
+        // -----------------------------------------
+        // 6文字 + "-" + 3文字
+        // -----------------------------------------
+
+        val pattern =
+            Regex(
+                "[A-Za-z0-9]{6}-[A-Za-z0-9]{3}"
+            )
+
+
+        // -----------------------------------------
+        // QR全体から検索
+        // -----------------------------------------
+
+        val match =
+            pattern.find(text)
+
+
+        if (
+            match != null
+        ) {
+
+            val result =
+                match.value
+
+
+            Log.d(
+                "PokaYoke",
+                "抽出した親品番: [$result]"
+            )
+
+
+            return result
+        }
+
+
+        Log.w(
+            "PokaYoke",
+            "6文字-3文字の親品番を検出できませんでした"
+        )
+
+
+        Log.w(
+            "PokaYoke",
+            "QR内容: [$text]"
+        )
+
+
+        return text
+    }
+
+
+    // =========================================================
     // ストレージ権限確認
     // =========================================================
 
@@ -246,10 +376,13 @@ class ChildListActivity : AppCompatActivity() {
             ) {
 
                 ActivityCompat.requestPermissions(
+
                     this,
+
                     arrayOf(
                         Manifest.permission.READ_EXTERNAL_STORAGE
                     ),
+
                     REQUEST_STORAGE
                 )
 
@@ -285,6 +418,7 @@ class ChildListActivity : AppCompatActivity() {
             grantResults
         )
 
+
         if (
             requestCode ==
             REQUEST_STORAGE
@@ -304,6 +438,7 @@ class ChildListActivity : AppCompatActivity() {
 
                 binding.emptyText.text =
                     "ストレージへのアクセスが許可されていません"
+
 
                 Toast.makeText(
                     this,
@@ -325,11 +460,13 @@ class ChildListActivity : AppCompatActivity() {
             android.os.Environment
                 .getExternalStorageDirectory()
 
+
         val folder =
             File(
                 storagePath,
                 FOLDER_NAME
             )
+
 
         if (
             !folder.exists()
@@ -337,6 +474,7 @@ class ChildListActivity : AppCompatActivity() {
 
             folder.mkdirs()
         }
+
 
         return File(
             folder,
@@ -356,15 +494,12 @@ class ChildListActivity : AppCompatActivity() {
             val file =
                 getExcelFile()
 
+
             Log.d(
                 "Excel",
                 "Excelパス: ${file.absolutePath}"
             )
 
-
-            // -----------------------------------------
-            // Excelがない
-            // -----------------------------------------
 
             if (
                 !file.exists()
@@ -373,6 +508,7 @@ class ChildListActivity : AppCompatActivity() {
                 list.clear()
 
                 adapter.notifyDataSetChanged()
+
 
                 binding.emptyText.text =
                     """
@@ -387,13 +523,16 @@ class ChildListActivity : AppCompatActivity() {
                     に parts.xlsx をコピーしてください。
                     """.trimIndent()
 
+
                 binding.remainingText.text =
                     "残り: 0"
+
 
                 Log.e(
                     "Excel",
                     "Excelが存在しません: ${file.absolutePath}"
                 )
+
 
                 return
             }
@@ -408,13 +547,16 @@ class ChildListActivity : AppCompatActivity() {
             val inputStream =
                 file.inputStream()
 
+
             val workbook =
                 XSSFWorkbook(
                     inputStream
                 )
 
+
             val sheet =
                 workbook.getSheetAt(0)
+
 
             list.clear()
 
@@ -422,8 +564,6 @@ class ChildListActivity : AppCompatActivity() {
             // =================================================
             // Excel読み込み
             // =================================================
-
-            // 1行目はタイトル行
 
             for (
             i in 1..sheet.lastRowNum
@@ -479,8 +619,11 @@ class ChildListActivity : AppCompatActivity() {
                 // -----------------------------------------
 
                 if (
-                    p.trim() ==
-                    parentCode.trim()
+                    p.trim()
+                        .equals(
+                            parentCode.trim(),
+                            ignoreCase = true
+                        )
                 ) {
 
                     list.add(
@@ -495,7 +638,9 @@ class ChildListActivity : AppCompatActivity() {
 
                             checked = false,
 
-                            parentCode = p
+                            parentCode = p,
+
+                            blinkStartTime = 0L
                         )
                     )
                 }
@@ -532,9 +677,16 @@ class ChildListActivity : AppCompatActivity() {
                 binding.emptyText.text =
                     "品番が登録されていません"
 
+
+                Log.w(
+                    "Excel",
+                    "親品番 [$parentCode] に一致するデータがありません"
+                )
+
             } else {
 
                 binding.emptyText.text = ""
+
 
                 Log.d(
                     "Excel",
@@ -551,6 +703,7 @@ class ChildListActivity : AppCompatActivity() {
                 "Excel読み込み失敗",
                 e
             )
+
 
             binding.emptyText.text =
                 """
@@ -595,6 +748,7 @@ class ChildListActivity : AppCompatActivity() {
                 val value =
                     cell.numericCellValue
 
+
                 if (
                     value ==
                     value.toLong().toDouble()
@@ -636,12 +790,14 @@ class ChildListActivity : AppCompatActivity() {
             ProcessCameraProvider
                 .getInstance(this)
 
+
         future.addListener(
 
             {
 
                 cameraProvider =
                     future.get()
+
 
                 startCamera()
 
@@ -727,7 +883,9 @@ class ChildListActivity : AppCompatActivity() {
 
                 val image =
                     InputImage.fromMediaImage(
+
                         mediaImage,
+
                         imageProxy
                             .imageInfo
                             .rotationDegrees
@@ -795,14 +953,15 @@ class ChildListActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // QRコード処理
+    // 子部品QRコード処理
     // =========================================================
+
     private fun processScannedCode(
         code: String
     ) {
 
         // -----------------------------------------
-        // 対象部品を検索
+        // 子部品QRは読み取った内容そのままで照合
         // -----------------------------------------
 
         val target =
@@ -828,7 +987,9 @@ class ChildListActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 )
 
+
             toast.show()
+
 
             Handler(
                 Looper.getMainLooper()
@@ -838,6 +999,7 @@ class ChildListActivity : AppCompatActivity() {
                 },
                 700
             )
+
 
             return
         }
@@ -855,11 +1017,24 @@ class ChildListActivity : AppCompatActivity() {
         }
 
 
-        // -----------------------------------------
-        // チェック済みにする
-        // -----------------------------------------
+        // =================================================
+        // ★ チェック済みにする
+        // =================================================
 
         target.checked = true
+
+
+        // =================================================
+        // ★ 点滅開始時刻を記録
+        // =================================================
+
+        target.blinkStartTime =
+            System.currentTimeMillis()
+
+
+        // -----------------------------------------
+        // 履歴
+        // -----------------------------------------
 
         HistoryManager.addHistory(
 
@@ -888,6 +1063,7 @@ class ChildListActivity : AppCompatActivity() {
 
         val position =
             list.indexOf(target)
+
 
         if (
             position != -1
@@ -965,15 +1141,11 @@ class ChildListActivity : AppCompatActivity() {
     }
 
 
-// =========================================================
-// 全部チェック完了
-// =========================================================
+    // =========================================================
+    // 全部チェック完了
+    // =========================================================
 
     private fun checkCompletion() {
-
-        // -----------------------------------------
-        // 全部チェックされたか確認
-        // -----------------------------------------
 
         if (
             list.isNotEmpty() &&
@@ -983,7 +1155,7 @@ class ChildListActivity : AppCompatActivity() {
         ) {
 
             // =============================================
-            // ピッキング完了を履歴保存
+            // ピッキング完了
             // =============================================
 
             HistoryManager.addHistory(
@@ -1000,8 +1172,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
             // =============================================
-            // 今回の親品番を
-            // 次回段替え用の前回生産品番として保存
+            // 前回生産親品番として保存
             // =============================================
 
             saveLastProductionParentCode()
@@ -1012,6 +1183,7 @@ class ChildListActivity : AppCompatActivity() {
                 "ピッキング完了"
             )
 
+
             Log.d(
                 "PokaYoke",
                 "次回段替え用の前回親品番: $parentCode"
@@ -1019,7 +1191,7 @@ class ChildListActivity : AppCompatActivity() {
 
 
             // =============================================
-            // 次の画面へ
+            // 次の画面
             // =============================================
 
             startActivity(
@@ -1030,10 +1202,10 @@ class ChildListActivity : AppCompatActivity() {
                 )
             )
 
+
             finish()
         }
     }
-
 
 
     // =========================================================
