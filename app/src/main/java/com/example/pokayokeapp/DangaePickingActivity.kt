@@ -59,6 +59,12 @@ class DangaePickingActivity : AppCompatActivity() {
 
     private var isCameraRunning = false
 
+    // QR読み取り中かどうか
+    private var isQrReading = false
+
+    // QR読み取り処理の重複防止
+    private var isProcessingQr = false
+
 
     // =========================================================
     // 完了フラグ
@@ -86,6 +92,14 @@ class DangaePickingActivity : AppCompatActivity() {
 
         private const val LAST_PARENT_KEY =
             "LAST_PARENT_CODE"
+
+        // =====================================================
+        // タップによる部品チェック機能
+        // true  = ON（タップでOKにできる）
+        // false = OFF（QR読み取りのみでOKにする）
+        // =====================================================
+
+        private const val ENABLE_TAP_CHECK = true
     }
 
 
@@ -160,52 +174,61 @@ class DangaePickingActivity : AppCompatActivity() {
 
                 list = list,
 
+
                 // -----------------------------------------
                 // 行タップ
                 // -----------------------------------------
 
                 onClick = { item ->
 
+                    // -----------------------------------------
+                    // タップチェック機能がOFFの場合
+                    // -----------------------------------------
+
+                    if (!ENABLE_TAP_CHECK) {
+                        return@ChildAdapter
+                    }
+
+                    // -----------------------------------------
+                    // 完了後は処理しない
+                    // -----------------------------------------
+
                     if (isCompleted) {
                         return@ChildAdapter
                     }
 
-                    item.checked =
-                        !item.checked
+                    // -----------------------------------------
+                    // チェック状態変更
+                    // -----------------------------------------
+
+                    item.checked = !item.checked
+
+                    // -----------------------------------------
+                    // 履歴記録
+                    // -----------------------------------------
 
                     HistoryManager.addHistory(
-
                         this,
-
                         mode = "段替え",
-
-                        action =
-                            if (item.checked) {
-                                "段替え部品チェック"
-                            } else {
-                                "段替え部品チェック解除"
-                            },
-
-                        parentCode =
-                            currentParentCode,
-
-                        childCode =
-                            item.code,
-
-                        location =
-                            item.location,
-
+                        action = if (item.checked) {
+                            "段替え部品チェック"
+                        } else {
+                            "段替え部品チェック解除"
+                        },
+                        parentCode = currentParentCode,
+                        childCode = item.code,
+                        location = item.location,
                         method = "タップ"
                     )
 
-                    val position =
-                        list.indexOf(item)
+                    // -----------------------------------------
+                    // 表示更新
+                    // -----------------------------------------
+
+                    val position = list.indexOf(item)
 
                     if (position != -1) {
-
-                        adapter.notifyItemChanged(
-                            position
-                        )
+                        adapter.notifyItemChanged(position)
                     }
 
                     updateRemainingCount()
@@ -242,6 +265,25 @@ class DangaePickingActivity : AppCompatActivity() {
         binding.backButton.setOnClickListener {
 
             showBackConfirmDialog()
+        }
+
+        // =====================================================
+        // QR読み取りボタン
+        // =====================================================
+
+        binding.btnReadQr.setOnClickListener {
+
+            if (isCompleted) {
+                return@setOnClickListener
+            }
+
+            if (isQrReading) {
+                return@setOnClickListener
+            }
+
+            isProcessingQr = false
+            isQrReading = true
+
         }
 
 
@@ -847,76 +889,59 @@ class DangaePickingActivity : AppCompatActivity() {
         // QR Scanner
         // =====================================================
 
-        val scanner =
-            BarcodeScanning.getClient()
-
+        val scanner = BarcodeScanning.getClient()
 
         analysis.setAnalyzer(
             cameraExecutor
         ) { imageProxy ->
 
-            val mediaImage =
-                imageProxy.image
-
-
-            if (
-                mediaImage != null
-            ) {
-
-                val image =
-                    InputImage.fromMediaImage(
-                        mediaImage,
-                        imageProxy
-                            .imageInfo
-                            .rotationDegrees
-                    )
-
-
-                scanner.process(image)
-
-                    .addOnSuccessListener {
-
-                            barcodes ->
-
-                        // -------------------------------------
-                        // 完了後はQR処理しない
-                        // -------------------------------------
-
-                        if (isCompleted) {
-                            return@addOnSuccessListener
-                        }
-
-
-                        val code =
-                            barcodes
-                                .firstOrNull()
-                                ?.rawValue
-                                ?.trim()
-                                ?: ""
-
-
-                        if (
-                            code.isNotEmpty()
-                        ) {
-
-                            runOnUiThread {
-
-                                processScannedCode(
-                                    code
-                                )
-                            }
-                        }
-                    }
-
-                    .addOnCompleteListener {
-
-                        imageProxy.close()
-                    }
-
-            } else {
-
+            // 読み取りボタンが押されていない場合は
+            // QRコードを解析しない
+            if (!isQrReading || isCompleted || isProcessingQr) {
                 imageProxy.close()
+                return@setAnalyzer
             }
+
+            val mediaImage = imageProxy.image
+
+            if (mediaImage == null) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
+
+            val image = InputImage.fromMediaImage(
+                mediaImage,
+                imageProxy.imageInfo.rotationDegrees
+            )
+
+            scanner.process(image)
+                .addOnSuccessListener { barcodes ->
+
+                    // 読み取り中でなければ処理しない
+                    if (!isQrReading || isCompleted || isProcessingQr) {
+                        return@addOnSuccessListener
+                    }
+
+                    val code = barcodes
+                        .firstOrNull()
+                        ?.rawValue
+                        ?.trim()
+                        ?: ""
+
+                    if (code.isNotEmpty()) {
+
+                        // 1回読み取ったら、すぐに読み取りを停止
+                        isProcessingQr = true
+                        isQrReading = false
+
+                        runOnUiThread {
+                            processScannedCode(code)
+                        }
+                    }
+                }
+                .addOnCompleteListener {
+                    imageProxy.close()
+                }
         }
 
 

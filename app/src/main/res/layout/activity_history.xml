@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -108,35 +113,59 @@
     <!-- ボタン -->
     <!-- ============================= -->
 
+    <!-- ============================= -->
+    <!-- ボタン -->
+    <!-- ============================= -->
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:baselineAligned="false">
 
         <Button
             android:id="@+id/btnBack"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="戻る" />
+            android:minHeight="48dp"
+            android:gravity="center"
+            android:text="戻る"
+            android:textSize="10sp" />
 
         <Button
             android:id="@+id/btnClear"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="履歴削除"
-            android:textSize="12sp" />
+            android:minHeight="48dp"
+            android:gravity="center"
+            android:text="履歴\n削除"
+            android:textSize="8sp" />
 
         <Button
             android:id="@+id/btnExport"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Excel出力"
-            android:textSize="10sp" />
+            android:minHeight="48dp"
+            android:gravity="center"
+            android:text="Excel\n出力"
+            android:textSize="9sp" />
 
+        <Button
+            android:id="@+id/btnPasswordSettings"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:gravity="center"
+            android:text="ﾊﾟｽﾜｰﾄﾞ\n設定"
+            android:textSize="8sp" />
 
     </LinearLayout>
 
 </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

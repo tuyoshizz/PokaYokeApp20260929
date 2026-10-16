@@ -44,6 +44,14 @@ class ChildListActivity : AppCompatActivity() {
 
     private var isCameraRunning = false
 
+    // 読み取りボタンが押されているか
+    @Volatile
+    private var isScanRequested = false
+
+    // QRコードの解析中か（二重解析防止）
+    @Volatile
+    private var isProcessingScan = false
+
 
     companion object {
 
@@ -72,8 +80,12 @@ class ChildListActivity : AppCompatActivity() {
 
         private const val KEY_LAST_PARENT_CODE =
             "LAST_PARENT_CODE"
-    }
 
+        // タップによる部品チェック機能
+        // trueでタップ可
+        // falseでタップ機能停止
+        private const val ENABLE_TAP_CHECK = true
+    }
 
     // =========================================================
     // onCreate
@@ -153,7 +165,19 @@ class ChildListActivity : AppCompatActivity() {
                 // 行をタップした場合
                 // -----------------------------------------
 
+                // -----------------------------------------
+// 行をタップした場合
+// -----------------------------------------
+
                 onClick = { item ->
+
+                    // -----------------------------------------
+                    // タップチェック機能がOFFの場合
+                    // -----------------------------------------
+
+                    if (!ENABLE_TAP_CHECK) {
+                        return@ChildAdapter
+                    }
 
                     // -----------------------------------------
                     // チェック状態変更
@@ -161,14 +185,9 @@ class ChildListActivity : AppCompatActivity() {
 
                     item.checked = !item.checked
 
-                    // 点滅を無効化
+                    // 点滅設定
                     item.blinkStartTime = 0L
                     item.blinkEnabled = false
-
-
-                    // =================================================
-                    // ★ 点滅開始時刻
-                    // =================================================
 
                     if (item.checked) {
                         item.blinkStartTime = System.currentTimeMillis()
@@ -178,54 +197,33 @@ class ChildListActivity : AppCompatActivity() {
                         item.blinkEnabled = false
                     }
 
-
                     // -----------------------------------------
                     // 履歴記録
                     // -----------------------------------------
 
                     HistoryManager.addHistory(
-
                         this,
-
                         mode = "ピッキング",
-
-                        action =
-                            if (item.checked) {
-                                "部品チェック"
-                            } else {
-                                "部品チェック解除"
-                            },
-
-                        parentCode =
-                            parentCode,
-
-                        childCode =
-                            item.code,
-
-                        location =
-                            item.location,
-
+                        action = if (item.checked) {
+                            "部品チェック"
+                        } else {
+                            "部品チェック解除"
+                        },
+                        parentCode = parentCode,
+                        childCode = item.code,
+                        location = item.location,
                         method = "タップ"
                     )
-
 
                     // -----------------------------------------
                     // 表示更新
                     // -----------------------------------------
 
-                    val position =
-                        list.indexOf(item)
+                    val position = list.indexOf(item)
 
-
-                    if (
-                        position != -1
-                    ) {
-
-                        adapter.notifyItemChanged(
-                            position
-                        )
+                    if (position != -1) {
+                        adapter.notifyItemChanged(position)
                     }
-
 
                     updateRemainingCount()
 
@@ -263,6 +261,31 @@ class ChildListActivity : AppCompatActivity() {
         binding.backButton.setOnClickListener {
 
             showBackConfirmDialog()
+        }
+
+        // =====================================================
+        // QR読み取りボタン
+        // =====================================================
+
+        binding.btnReadQr.setOnClickListener {
+
+            if (!isCameraRunning) {
+                Toast.makeText(
+                    this,
+                    "カメラを起動しています。少しお待ちください",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
+            if (isScanRequested || isProcessingScan) {
+                return@setOnClickListener
+            }
+
+            isScanRequested = true
+
+            binding.btnReadQr.isEnabled = false
+            binding.btnReadQr.text = "読み取り中..."
         }
 
 
@@ -865,65 +888,58 @@ class ChildListActivity : AppCompatActivity() {
             BarcodeScanning.getClient()
 
 
-        analysis.setAnalyzer(
-            cameraExecutor
-        ) { imageProxy ->
+        analysis.setAnalyzer(cameraExecutor) { imageProxy ->
 
-            val mediaImage =
-                imageProxy.image
+            // ボタンが押されていない間は解析しない
+            if (!isScanRequested || isProcessingScan) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
 
+            val mediaImage = imageProxy.image
 
-            if (
-                mediaImage != null
-            ) {
+            if (mediaImage == null) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
 
-                val image =
-                    InputImage.fromMediaImage(
+            isProcessingScan = true
 
-                        mediaImage,
+            val image = InputImage.fromMediaImage(
+                mediaImage,
+                imageProxy.imageInfo.rotationDegrees
+            )
 
-                        imageProxy
-                            .imageInfo
-                            .rotationDegrees
-                    )
+            scanner.process(image)
+                .addOnSuccessListener { barcodes ->
 
+                    val code = barcodes
+                        .firstOrNull { !it.rawValue.isNullOrBlank() }
+                        ?.rawValue
+                        ?.trim()
+                        .orEmpty()
 
-                scanner.process(image)
+                    if (code.isNotEmpty() && isScanRequested) {
 
-                    .addOnSuccessListener {
+                        // 先に停止して連続読み取りを防止
+                        isScanRequested = false
 
-                            barcodes ->
-
-                        val code =
-                            barcodes
-                                .firstOrNull()
-                                ?.rawValue
-                                ?.trim()
-                                ?: ""
-
-
-                        if (
-                            code.isNotEmpty()
-                        ) {
-
-                            runOnUiThread {
-
-                                processScannedCode(
-                                    code
-                                )
+                        runOnUiThread {
+                            try {
+                                processScannedCode(code)
+                            } finally {
+                                finishScanButton()
                             }
                         }
                     }
-
-                    .addOnCompleteListener {
-
-                        imageProxy.close()
-                    }
-
-            } else {
-
-                imageProxy.close()
-            }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("PokaYoke", "QR読み取り失敗", e)
+                }
+                .addOnCompleteListener {
+                    imageProxy.close()
+                    isProcessingScan = false
+                }
         }
 
 
@@ -945,6 +961,16 @@ class ChildListActivity : AppCompatActivity() {
 
 
         isCameraRunning = true
+    }
+
+    // =========================================================
+    // 読み取りボタンを待機状態に戻す
+    // =========================================================
+
+    private fun finishScanButton() {
+        isScanRequested = false
+        binding.btnReadQr.isEnabled = true
+        binding.btnReadQr.text = "読み取り"
     }
 
 

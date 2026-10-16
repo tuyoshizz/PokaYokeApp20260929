@@ -13,6 +13,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pokayokeapp.databinding.ActivityHistoryBinding
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.IOException
+import android.text.InputType
+import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.LinearLayout
 
 
 class HistoryActivity : AppCompatActivity() {
@@ -51,6 +55,209 @@ class HistoryActivity : AppCompatActivity() {
             "読取データ.xlsx"
     }
 
+    // =====================================================
+    // パスワード認証
+    // =====================================================
+
+    private fun requireHistoryPassword(
+        onSuccess: () -> Unit
+    ) {
+        if (!PasswordManager.isPasswordSet(this)) {
+            showSetPasswordDialog {
+                onSuccess()
+            }
+        } else {
+            showVerifyPasswordDialog(onSuccess)
+        }
+    }
+
+
+    // =====================================================
+    // パスワード入力
+    // =====================================================
+
+    private fun showVerifyPasswordDialog(
+        onSuccess: () -> Unit
+    ) {
+        val input = EditText(this).apply {
+            hint = "パスワード"
+            inputType =
+                InputType.TYPE_CLASS_TEXT or
+                        InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("パスワード認証")
+            .setMessage("パスワードを入力してください")
+            .setView(input)
+            .setPositiveButton("確認", null)
+            .setNegativeButton("キャンセル", null)
+            .create()
+            .also { dialog ->
+                dialog.setOnShowListener {
+                    dialog.getButton(
+                        AlertDialog.BUTTON_POSITIVE
+                    ).setOnClickListener {
+                        val password = input.text.toString()
+
+                        if (
+                            PasswordManager.verifyPassword(
+                                this,
+                                password
+                            )
+                        ) {
+                            dialog.dismiss()
+                            onSuccess()
+                        } else {
+                            input.error =
+                                "パスワードが違います"
+                        }
+                    }
+                }
+
+                dialog.show()
+            }
+    }
+
+
+    // =====================================================
+    // パスワード設定・変更
+    // =====================================================
+
+    private fun showSetPasswordDialog(
+        onSuccess: () -> Unit = {}
+    ) {
+        val passwordInput = EditText(this).apply {
+            hint = "新しいパスワード（4文字以上）"
+            inputType =
+                InputType.TYPE_CLASS_TEXT or
+                        InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+
+        val confirmInput = EditText(this).apply {
+            hint = "新しいパスワード（確認）"
+            inputType =
+                InputType.TYPE_CLASS_TEXT or
+                        InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+
+            val padding = (20 * resources.displayMetrics.density)
+                .toInt()
+
+            setPadding(padding, 0, padding, 0)
+
+            addView(
+                passwordInput,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+
+            addView(
+                confirmInput,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        val title = if (
+            PasswordManager.isPasswordSet(this)
+        ) {
+            "パスワード変更"
+        } else {
+            "パスワード設定"
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(
+                "パスワードを4文字以上で入力してください。"
+            )
+            .setView(container)
+            .setPositiveButton("保存", null)
+            .setNegativeButton("キャンセル", null)
+            .create()
+            .also { dialog ->
+                dialog.setOnShowListener {
+                    dialog.getButton(
+                        AlertDialog.BUTTON_POSITIVE
+                    ).setOnClickListener {
+                        val password =
+                            passwordInput.text.toString()
+
+                        val confirm =
+                            confirmInput.text.toString()
+
+                        when {
+                            password.length < 4 -> {
+                                passwordInput.error =
+                                    "4文字以上で入力してください"
+                            }
+
+                            password != confirm -> {
+                                confirmInput.error =
+                                    "パスワードが一致しません"
+                            }
+
+                            else -> {
+                                if (
+                                    PasswordManager.setPassword(
+                                        this,
+                                        password
+                                    )
+                                ) {
+                                    dialog.dismiss()
+
+                                    Toast.makeText(
+                                        this,
+                                        "パスワードを保存しました",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    onSuccess()
+                                } else {
+                                    Toast.makeText(
+                                        this,
+                                        "パスワードの保存に失敗しました",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                dialog.show()
+            }
+    }
+
+    // =====================================================
+// パスワード設定・変更
+// =====================================================
+
+    private fun openPasswordSettings() {
+
+        if (PasswordManager.isPasswordSet(this)) {
+
+            // 設定済みの場合は、現在のパスワードを確認
+            showVerifyPasswordDialog {
+
+                // 認証成功後に変更画面を表示
+                showSetPasswordDialog()
+            }
+
+        } else {
+
+            // 未設定の場合は、そのまま初回設定
+            showSetPasswordDialog()
+        }
+    }
 
     // =========================================================
     // onCreate
@@ -91,15 +298,24 @@ class HistoryActivity : AppCompatActivity() {
             adapter
 
 
-        // =====================================================
         // Excel出力
-        // =====================================================
-
         binding.btnExport.setOnClickListener {
-
-            exportHistoryToExcel()
+            requireHistoryPassword {
+                exportHistoryToExcelAuthorized()
+            }
         }
 
+        // 履歴削除
+        binding.btnClear.setOnClickListener {
+            requireHistoryPassword {
+                showClearConfirmDialog()
+            }
+        }
+
+        // パスワード設定・変更
+        binding.btnPasswordSettings.setOnClickListener {
+            openPasswordSettings()
+        }
 
         // =====================================================
         // 戻る
@@ -110,15 +326,6 @@ class HistoryActivity : AppCompatActivity() {
             finish()
         }
 
-
-        // =====================================================
-        // 履歴削除
-        // =====================================================
-
-        binding.btnClear.setOnClickListener {
-
-            showClearConfirmDialog()
-        }
 
 
         // =====================================================
@@ -169,7 +376,7 @@ class HistoryActivity : AppCompatActivity() {
     // Excel出力
     // =========================================================
 
-    private fun exportHistoryToExcel() {
+    private fun exportHistoryToExcelAuthorized() {
 
         // -----------------------------------------------------
         // 履歴取得
