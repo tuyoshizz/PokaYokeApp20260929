@@ -11,12 +11,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="段替え部品供給"
-        android:textSize="26sp"
+        android:textSize="18sp"
         android:textStyle="bold"
-        android:gravity="center"
+        android:gravity="left"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="15dp"/>
 
     <TextView
@@ -24,21 +23,22 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="今回生産品番："
-        android:textSize="18sp"
-        android:gravity="center"
+        android:textSize="10sp"
+        android:gravity="left"
         app:layout_constraintTop_toBottomOf="@id/titleText"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="8dp"/>
 
+    <!-- カメラ -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
-        android:layout_width="0dp"
-        android:layout_height="180dp"
-        app:layout_constraintTop_toBottomOf="@id/parentText"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_width="150dp"
+        android:layout_height="200dp"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="10dp"/>
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 
     <TextView
         android:id="@+id/remainingText"

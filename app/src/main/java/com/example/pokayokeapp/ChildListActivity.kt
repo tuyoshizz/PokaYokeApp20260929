@@ -159,8 +159,11 @@ class ChildListActivity : AppCompatActivity() {
                     // チェック状態変更
                     // -----------------------------------------
 
-                    item.checked =
-                        !item.checked
+                    item.checked = !item.checked
+
+                    // 点滅を無効化
+                    item.blinkStartTime = 0L
+                    item.blinkEnabled = false
 
 
                     // =================================================
@@ -168,18 +171,11 @@ class ChildListActivity : AppCompatActivity() {
                     // =================================================
 
                     if (item.checked) {
-
-                        // チェックした瞬間を記録
-
-                        item.blinkStartTime =
-                            System.currentTimeMillis()
-
+                        item.blinkStartTime = System.currentTimeMillis()
+                        item.blinkEnabled = true
                     } else {
-
-                        // チェック解除
-
-                        item.blinkStartTime =
-                            0L
+                        item.blinkStartTime = 0L
+                        item.blinkEnabled = false
                     }
 
 
@@ -252,7 +248,7 @@ class ChildListActivity : AppCompatActivity() {
         binding.recyclerView.layoutManager =
             GridLayoutManager(
                 this,
-                2
+                3
             )
 
 
@@ -1023,6 +1019,10 @@ class ChildListActivity : AppCompatActivity() {
 
         target.checked = true
 
+        // QR読み取り後は点滅させない
+        target.blinkStartTime = 0L
+        target.blinkEnabled = false
+
 
         // =================================================
         // ★ 点滅開始時刻を記録
@@ -1213,7 +1213,6 @@ class ChildListActivity : AppCompatActivity() {
     // =========================================================
 
     private fun showBackConfirmDialog() {
-
         AlertDialog.Builder(this)
 
             .setTitle(
@@ -1237,6 +1236,7 @@ class ChildListActivity : AppCompatActivity() {
             )
 
             .show()
+
     }
 
 

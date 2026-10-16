@@ -18,5 +18,7 @@ data class ChildItem(
     // 0L = まだ点滅していない
     // =========================================
 
-    var blinkStartTime: Long = 0L
+    var blinkStartTime: Long = 0L,
+
+    var blinkEnabled: Boolean = true
 )

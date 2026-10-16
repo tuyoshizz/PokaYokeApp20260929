@@ -3,30 +3,50 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    android:minHeight="100dp"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:gravity="center_vertical"
+    android:padding="12dp"
+    android:background="@drawable/bg_child_card"
+    android:clickable="true"
+    android:focusable="true">
 
-    <!-- 部品名 -->
-    <TextView
-        android:id="@+id/txtName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="部品名"
-        android:textSize="16sp"
-        android:textStyle="bold"/>
-
-    <!-- コード -->
+    <!-- 品番 -->
     <TextView
         android:id="@+id/txtCode"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="コード"/>
+        android:text="品番"
+        android:textColor="#212121"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
-    <!-- ロケーション -->
+    <!-- 名称 -->
+    <TextView
+        android:id="@+id/txtName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="名称"
+        android:textColor="#424242"
+        android:textSize="10sp"
+        android:maxLines="3"
+        android:ellipsize="end" />
+
+    <!-- 場所 -->
     <TextView
         android:id="@+id/txtLoc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="棚"/>
+        android:layout_marginTop="8dp"
+        android:text="場所"
+        android:textColor="#1565C0"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
 </LinearLayout>
