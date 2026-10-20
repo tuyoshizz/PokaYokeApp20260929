@@ -440,7 +440,8 @@ class DangaeCompareActivity : AppCompatActivity() {
 
 
                 // =================================================
-                // 前回・今回どちらも存在
+                // 前回・今回のリストを比較して、
+                // 一致・段替・追加・削除の４つに分ける
                 // =================================================
 
                 if (
@@ -449,7 +450,7 @@ class DangaeCompareActivity : AppCompatActivity() {
                 ) {
 
                     // -----------------------------------------
-                    // 一致
+                    // 一致(前回品番に存在する品番)
                     // -----------------------------------------
 
                     if (
@@ -459,7 +460,7 @@ class DangaeCompareActivity : AppCompatActivity() {
 
                         resultList.add(
 
-                            "○ [$location] " +
+                            "一致 [$location] " +
                                     "$oldCode ⇔ $newCode"
                         )
 
@@ -470,12 +471,12 @@ class DangaeCompareActivity : AppCompatActivity() {
                     } else {
 
                         // -------------------------------------
-                        // 変更
+                        // 段替(段替えが必要な品番)
                         // -------------------------------------
 
                         resultList.add(
 
-                            "× [$location] " +
+                            "段替 [$location] " +
                                     "$oldCode ⇒ $newCode"
                         )
 
@@ -512,7 +513,7 @@ class DangaeCompareActivity : AppCompatActivity() {
 
                     resultList.add(
 
-                        "追加 [$location] " +
+                        "新規 [$location] " +
                                 "なし ⇒ $newCode"
                     )
 
@@ -529,7 +530,7 @@ class DangaeCompareActivity : AppCompatActivity() {
             binding.summaryText.text =
                 """
                 一致：${matchCount}件
-                変更・追加・削除：${changeCount}件
+                段替・新規・削除：${changeCount}件
                 """.trimIndent()
 
 
@@ -537,16 +538,15 @@ class DangaeCompareActivity : AppCompatActivity() {
             // ListView
             // =================================================
 
-            val adapter =
-                ArrayAdapter(
-                    this,
-                    android.R.layout.simple_list_item_1,
-                    resultList
-                )
 
+            val adapter = ArrayAdapter(
+                this,
+                R.layout.dangaelist_item,
+                resultList
+            )
 
-            binding.resultList.adapter =
-                adapter
+            binding.resultList.adapter = adapter
+
 
 
             // =================================================
