@@ -12,20 +12,27 @@
         android:textSize="10sp"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"/>
+        android:layout_margin="8dp"/>
 
     <Button
         android:id="@+id/btnReturn"
         android:text="段替えモード"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"/>
+        android:layout_margin="8dp"/>
+
+    <Button
+        android:id="@+id/btnSupply"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="部品供給モード"
+        android:layout_margin="8dp" />
 
     <Button
         android:id="@+id/btnSpecial"
         android:text="読取履歴"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"/>
+        android:layout_margin="8dp"/>
 
 </LinearLayout>

@@ -185,7 +185,8 @@ class HistoryAdapter(
             // =================================================
 
             item.action == "段替えモード開始" ||
-                    item.action == "ピッキングモード開始" -> {
+                    item.action == "ピッキングモード開始" ||
+                            item.action == "部品供給モード開始" -> {
 
                 holder.itemView.setBackgroundColor(
                     Color.rgb(

@@ -1,3 +1,4 @@
+
 package com.example.pokayokeapp
 
 import android.content.Intent
@@ -10,22 +11,13 @@ class MenuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMenuBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
 
-        binding =
-            ActivityMenuBinding.inflate(
-                layoutInflater
-            )
-
+        binding = ActivityMenuBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // =====================================================
         // ピッキングモード
-        // =====================================================
-
         binding.btnPicking.setOnClickListener {
-
             HistoryManager.addHistory(
                 this,
                 mode = "ピッキング",
@@ -33,20 +25,12 @@ class MenuActivity : AppCompatActivity() {
             )
 
             startActivity(
-                Intent(
-                    this,
-                    MainActivity::class.java
-                )
+                Intent(this, MainActivity::class.java)
             )
         }
 
-
-        // =====================================================
         // 段替えモード
-        // =====================================================
-
         binding.btnReturn.setOnClickListener {
-
             HistoryManager.addHistory(
                 this,
                 mode = "段替え",
@@ -55,26 +39,30 @@ class MenuActivity : AppCompatActivity() {
             )
 
             startActivity(
-                Intent(
-                    this,
-                    DangaeActivity::class.java
-                )
+                Intent(this, DangaeActivity::class.java)
             )
         }
 
-
-        // =====================================================
-        // 読取履歴
-        // =====================================================
-
-        binding.btnSpecial.setOnClickListener {
+        // 部品供給モード（新規追加）
+        binding.btnSupply.setOnClickListener {
+            HistoryManager.addHistory(
+                this,
+                mode = "部品供給",
+                action = "部品供給モード開始",
+                method = "-"
+            )
 
             startActivity(
-                Intent(
-                    this,
-                    HistoryActivity::class.java
-                )
+                Intent(this, SupplyActivity::class.java)
+            )
+        }
+
+        // 読み取り履歴
+        binding.btnSpecial.setOnClickListener {
+            startActivity(
+                Intent(this, HistoryActivity::class.java)
             )
         }
     }
 }
+
