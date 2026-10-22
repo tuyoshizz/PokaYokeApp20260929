@@ -97,6 +97,9 @@ class SupplyActivity : AppCompatActivity() {
 
             binding.topCodeText.text = "部品QR待ち"
             topPanel.setBackgroundColor(Color.WHITE)
+
+            binding.topCodeText.setTextColor(Color.BLACK)
+
             binding.bottomStatusText.text = ""
 
             binding.statusText.text =
@@ -835,7 +838,7 @@ class SupplyActivity : AppCompatActivity() {
         HistoryManager.addHistory(
             this,
             mode = MODE_NAME,
-            action = "親品番読取",
+            action = "親品番決定",
             parentCode = parentCode,
             method = "QR"
         )
@@ -894,6 +897,7 @@ class SupplyActivity : AppCompatActivity() {
                 return
             }
 
+
             // 部品QRを記憶
             selectedChildCode = matchedChild
 
@@ -903,10 +907,14 @@ class SupplyActivity : AppCompatActivity() {
             // 上側を緑色にする
             topPanel.setBackgroundColor(Color.GREEN)
 
+            // ★ 文字色を黒色に戻す
+            binding.topCodeText.setTextColor(Color.BLACK)
+
             binding.bottomStatusText.text = "供給QR待ち"
 
             binding.statusText.text =
                 "供給場所QRを読み取ってください"
+
 
             HistoryManager.addHistory(
                 this,
