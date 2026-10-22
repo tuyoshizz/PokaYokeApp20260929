@@ -15,10 +15,21 @@ android {
     }
 
     buildTypes {
-        release {
-            isMinifyEnabled = false
+        getByName("release") {
+            // 難読化と不要コードの削除を有効化
+            isMinifyEnabled = true
+
+            // 未使用のリソース（画像など）も削除してアプリを軽量化
+            isShrinkResources = true
+
+            // 難読化の標準ルールとカスタム設定ファイルを指定
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
+
 
     buildFeatures {
         viewBinding = true
