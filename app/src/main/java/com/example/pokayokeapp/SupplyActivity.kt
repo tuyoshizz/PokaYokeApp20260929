@@ -54,6 +54,12 @@ class SupplyActivity : AppCompatActivity() {
     // 1回目に読み取った子品番
     private var selectedChildCode = ""
 
+    // ★ 子品番の名前
+    private var selectedChildName = ""
+
+    // 子品番ごとの名前
+    private val childNames = mutableMapOf<String, String>()
+
     // 親品番がExcelに存在するか
     private var isParentConfirmed = false
 
@@ -339,6 +345,8 @@ class SupplyActivity : AppCompatActivity() {
 
         val file = getExcelFile()
 
+        val loadedChildNames = mutableMapOf<String, String>()
+
         Log.d(
             "Supply",
             "Excelパス: ${file.absolutePath}"
@@ -394,6 +402,13 @@ class SupplyActivity : AppCompatActivity() {
                                 row.getCell(1)
                             ).trim()
 
+
+                        // C列：子品番の名前
+                        val childName =
+                            getCellValue(
+                                row.getCell(2)
+                            ).trim()
+
                         if (
                             parent.isNotEmpty() &&
                             child.isNotEmpty()
@@ -406,10 +421,22 @@ class SupplyActivity : AppCompatActivity() {
                                     mutableSetOf()
                                 }
                                 .add(child)
+
+                            // ★ 子品番と名前を対応付ける
+                            if (childName.isNotEmpty()) {
+                                loadedChildNames[normalizeCode(child)] = childName
+                            }
                         }
                     }
                 }
             }
+
+            parentChildren.clear()
+            parentChildren.putAll(loadedData)
+
+            // ★ 子品番の名前一覧を更新
+            childNames.clear()
+            childNames.putAll(loadedChildNames)
 
             parentChildren.clear()
             parentChildren.putAll(loadedData)
@@ -901,8 +928,13 @@ class SupplyActivity : AppCompatActivity() {
             // 部品QRを記憶
             selectedChildCode = matchedChild
 
+            // ★ 子品番に対応する名前を取得
+            selectedChildName =
+                childNames[normalizeCode(selectedChildCode)] ?: "名前未登録"
+
+            // ★ 部品名と品番を2行で表示
             binding.topCodeText.text =
-                "部品\n品番：$selectedChildCode"
+                "部品：$selectedChildName\n品番：$selectedChildCode"
 
             // 上側を緑色にする
             topPanel.setBackgroundColor(Color.GREEN)
@@ -951,7 +983,7 @@ class SupplyActivity : AppCompatActivity() {
                 mode = MODE_NAME,
                 action = "供給QR読取",
                 parentCode = parentCode,
-                childCode = selectedChildCode,
+                childCode = code,
                 method = "QR"
             )
 

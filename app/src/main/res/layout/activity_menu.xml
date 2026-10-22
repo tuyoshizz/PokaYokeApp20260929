@@ -1,38 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:gravity="center"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/btnPicking"
-        android:text="ﾋﾟｯｷﾝｸﾞ兼返却モード"
-        android:textSize="10sp"
-        android:layout_width="200dp"
+    <!-- タイトル：画面の最上部 -->
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp"/>
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="0dp"
+        android:text="株式会社　Deltus\n部品ポカヨケアプリ"
+        android:textSize="24sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:background="#808080"
+        android:lineSpacingExtra="8dp" />
 
-    <Button
-        android:id="@+id/btnReturn"
-        android:text="段替えモード"
-        android:layout_width="200dp"
+    <!-- ボタン：従来どおり画面中央に配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp"/>
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center">
 
-    <Button
-        android:id="@+id/btnSupply"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:text="部品供給モード"
-        android:layout_margin="8dp" />
+        <Button
+            android:id="@+id/btnPicking"
+            android:text="ﾋﾟｯｷﾝｸﾞ兼返却モード"
+            android:textSize="10sp"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"/>
 
-    <Button
-        android:id="@+id/btnSpecial"
-        android:text="読取履歴"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"/>
+        <Button
+            android:id="@+id/btnReturn"
+            android:text="段替えモード"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"/>
 
-</LinearLayout>
+        <Button
+            android:id="@+id/btnSupply"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="部品供給モード"
+            android:layout_margin="8dp" />
+
+        <Button
+            android:id="@+id/btnSpecial"
+            android:text="読取履歴"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"/>
+
+    </LinearLayout>
+
+</FrameLayout>
