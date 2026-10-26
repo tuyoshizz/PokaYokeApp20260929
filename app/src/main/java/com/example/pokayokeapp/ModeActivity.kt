@@ -29,6 +29,9 @@ class ModeActivity : AppCompatActivity() {
         val btnReturn = Button(this)
         btnReturn.text = "Returnモード"
 
+        val btnBring = Button(this)
+        btnReturn.text = "Bringモード"
+
         val btnSpecial = Button(this)
         btnSpecial.text = "Specialモード"
 

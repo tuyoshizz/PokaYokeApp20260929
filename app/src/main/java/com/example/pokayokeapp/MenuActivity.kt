@@ -43,12 +43,12 @@ class MenuActivity : AppCompatActivity() {
             )
         }
 
-        // 部品供給モード（新規追加）
+        // 買物/供給モード
         binding.btnSupply.setOnClickListener {
             HistoryManager.addHistory(
                 this,
-                mode = "部品供給",
-                action = "部品供給モード開始",
+                mode = "買物/供給",
+                action = "買物/供給モード開始",
                 method = "-"
             )
 
@@ -65,4 +65,3 @@ class MenuActivity : AppCompatActivity() {
         }
     }
 }
-
