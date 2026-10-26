@@ -44,10 +44,17 @@
             android:layout_margin="8dp"/>
 
         <Button
+            android:id="@+id/btnBuy"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="買物モード"
+            android:layout_margin="8dp" />
+
+        <Button
             android:id="@+id/btnSupply"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:text="買物/供給モード"
+            android:text="供給モード"
             android:layout_margin="8dp" />
 
         <Button

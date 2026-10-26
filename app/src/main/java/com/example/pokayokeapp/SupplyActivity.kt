@@ -80,7 +80,7 @@ class SupplyActivity : AppCompatActivity() {
         private const val FOLDER_NAME = "PokaYoke"
         private const val EXCEL_FILE_NAME = "parts.xlsx"
 
-        private const val MODE_NAME = "買物/供給"
+        private const val MODE_NAME = "供給"
 
         private const val EXTRA_PARENT_CODE = "PARENT_CODE"
         private const val EXTRA_CHILD_CODE = "CHILD_CODE"
@@ -129,7 +129,7 @@ class SupplyActivity : AppCompatActivity() {
         topPanel = findViewById(R.id.topPanel)
 
         // モード表示
-        binding.modeText.text = "買物/供給モード"
+        binding.modeText.text = "供給モード"
 
         // 読み取りボタン
         binding.readButton.text = "読み取り"
@@ -172,6 +172,13 @@ class SupplyActivity : AppCompatActivity() {
             mainHandler.removeCallbacks(clearCompletionRunnable)
             resetSupplyState()
         }
+
+        binding.shelfMapButton.setOnClickListener {
+            val intent = Intent(this, ShelfMapActivity::class.java)
+            startActivity(intent)
+        }
+
+
     }
 
     // =========================================================
@@ -736,7 +743,7 @@ class SupplyActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // 買物/供給モードを初期状態に戻す
+    // 供給モードを初期状態に戻す
     // =========================================================
 
     private fun resetSupplyState() {
@@ -752,7 +759,7 @@ class SupplyActivity : AppCompatActivity() {
         isParentConfirmed = false
 
         // 画面表示を初期状態に戻す
-        binding.modeText.text = "買物/供給モード"
+        binding.modeText.text = "供給モード"
         binding.readButton.text = "読み取り"
         binding.readButton.isEnabled = isExcelLoaded
         binding.statusText.text =

@@ -69,12 +69,22 @@
             android:exported="false" />
 
         <activity
+            android:name=".BuyActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SupplyNextActivity"
             android:exported="false" />
 
         <activity
             android:name=".HistoryActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ShelfMapActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified" />
+
 
 
 

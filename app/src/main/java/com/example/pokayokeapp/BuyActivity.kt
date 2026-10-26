@@ -9,6 +9,9 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import android.graphics.Color
+import android.os.Build
+import android.os.Environment
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -16,7 +19,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.pokayokeapp.databinding.ActivitySupplyBinding
+import com.example.pokayokeapp.databinding.ActivityBuyBinding
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import org.apache.poi.ss.usermodel.Cell
@@ -29,9 +32,9 @@ import java.util.concurrent.Executors
 import android.os.Handler
 import android.os.Looper
 
-class BringActivity : AppCompatActivity() {
+class BuyActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySupplyBinding
+    private lateinit var binding: ActivityBuyBinding
     private lateinit var cameraExecutor: ExecutorService
 
     private var cameraProvider: ProcessCameraProvider? = null
@@ -59,6 +62,12 @@ class BringActivity : AppCompatActivity() {
     // 子品番ごとの名前
     private val childNames = mutableMapOf<String, String>()
 
+    // 子品番ごとのロケNo.
+    private val childLocationNumbers = mutableMapOf<String, String>()
+
+    // 読み取った部品のロケNo.
+    private var selectedLocationNumber = ""
+
     // 親品番がExcelに存在するか
     private var isParentConfirmed = false
 
@@ -79,7 +88,7 @@ class BringActivity : AppCompatActivity() {
         private const val FOLDER_NAME = "PokaYoke"
         private const val EXCEL_FILE_NAME = "parts.xlsx"
 
-        private const val MODE_NAME = "部品供給"
+        private const val MODE_NAME = "買物"
 
         private const val EXTRA_PARENT_CODE = "PARENT_CODE"
         private const val EXTRA_CHILD_CODE = "CHILD_CODE"
@@ -119,7 +128,7 @@ class BringActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivitySupplyBinding.inflate(layoutInflater)
+        binding = ActivityBuyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -128,7 +137,7 @@ class BringActivity : AppCompatActivity() {
         topPanel = findViewById(R.id.topPanel)
 
         // モード表示
-        binding.modeText.text = "部品供給モード"
+        binding.modeText.text = "買物モード"
 
         // 読み取りボタン
         binding.readButton.text = "読み取り"
@@ -169,8 +178,15 @@ class BringActivity : AppCompatActivity() {
 
         binding.resetParentButton.setOnClickListener {
             mainHandler.removeCallbacks(clearCompletionRunnable)
-            resetSupplyState()
+            resetBuyState()
         }
+
+        binding.shelfMapButton.setOnClickListener {
+            val intent = Intent(this, ShelfMapActivity::class.java)
+            startActivity(intent)
+        }
+
+
     }
 
     // =========================================================
@@ -180,8 +196,8 @@ class BringActivity : AppCompatActivity() {
     private fun checkStoragePermission() {
 
         if (
-            android.os.Build.VERSION.SDK_INT >=
-            android.os.Build.VERSION_CODES.M
+            Build.VERSION.SDK_INT >=
+            Build.VERSION_CODES.M
         ) {
 
             val granted =
@@ -315,7 +331,7 @@ class BringActivity : AppCompatActivity() {
     private fun getExcelFile(): File {
 
         val storagePath =
-            android.os.Environment.getExternalStorageDirectory()
+            Environment.getExternalStorageDirectory()
 
         val folder = File(
             storagePath,
@@ -345,9 +361,10 @@ class BringActivity : AppCompatActivity() {
         val file = getExcelFile()
 
         val loadedChildNames = mutableMapOf<String, String>()
+        val loadedLocationNumbers = mutableMapOf<String, String>()
 
         Log.d(
-            "Supply",
+            "Buy",
             "Excelパス: ${file.absolutePath}"
         )
 
@@ -361,7 +378,7 @@ class BringActivity : AppCompatActivity() {
                         "内部ストレージ/PokaYoke に配置してください。"
 
             Log.e(
-                "Supply",
+                "Buy",
                 "Excelファイルがありません"
             )
 
@@ -402,11 +419,13 @@ class BringActivity : AppCompatActivity() {
                             ).trim()
 
 
-                        // C列：子品番の名前
+                        // C列：部品名
                         val childName =
-                            getCellValue(
-                                row.getCell(2)
-                            ).trim()
+                            getCellValue(row.getCell(2)).trim()
+
+                        // D列：ロケNo.
+                        val locationNumber =
+                            getCellValue(row.getCell(3)).trim()
 
                         if (
                             parent.isNotEmpty() &&
@@ -424,6 +443,12 @@ class BringActivity : AppCompatActivity() {
                             // ★ 子品番と名前を対応付ける
                             if (childName.isNotEmpty()) {
                                 loadedChildNames[normalizeCode(child)] = childName
+
+                            }
+
+                            // 子品番とロケNo.を対応付ける
+                            if (locationNumber.isNotEmpty()) {
+                                loadedLocationNumbers[normalizeCode(child)] = locationNumber
                             }
                         }
                     }
@@ -437,6 +462,9 @@ class BringActivity : AppCompatActivity() {
             childNames.clear()
             childNames.putAll(loadedChildNames)
 
+            childLocationNumbers.clear()
+            childLocationNumbers.putAll(loadedLocationNumbers)
+
             parentChildren.clear()
             parentChildren.putAll(loadedData)
 
@@ -447,7 +475,7 @@ class BringActivity : AppCompatActivity() {
                 "親品番のQRコードを読み取ってください"
 
             Log.d(
-                "Supply",
+                "Buy",
                 "Excel読み込み成功: " +
                         "${parentChildren.size}種類の親品番"
             )
@@ -461,7 +489,7 @@ class BringActivity : AppCompatActivity() {
                 "Excelの読み込みに失敗しました"
 
             Log.e(
-                "Supply",
+                "Buy",
                 "Excel読み込み失敗",
                 e
             )
@@ -599,7 +627,7 @@ class BringActivity : AppCompatActivity() {
                     cameraProvider = future.get()
                     startCamera()
                 } catch (e: Exception) {
-                    Log.e("Supply", "カメラ初期化失敗", e)
+                    Log.e("Buy", "カメラ初期化失敗", e)
                     binding.statusText.text =
                         "カメラを初期化できませんでした"
                 }
@@ -688,7 +716,7 @@ class BringActivity : AppCompatActivity() {
                                     processScannedCode(code)
                                 } catch (e: Exception) {
                                     Log.e(
-                                        "Supply",
+                                        "Buy",
                                         "QRコード処理失敗",
                                         e
                                     )
@@ -705,7 +733,7 @@ class BringActivity : AppCompatActivity() {
                         }
                     }
                     .addOnFailureListener { e ->
-                        Log.e("Supply", "QR解析失敗", e)
+                        Log.e("Buy", "QR解析失敗", e)
                     }
                     .addOnCompleteListener {
                         imageProxy.close()
@@ -726,7 +754,7 @@ class BringActivity : AppCompatActivity() {
 
             isCameraRunning = false
 
-            Log.e("Supply", "カメラ起動失敗", e)
+            Log.e("Buy", "カメラ起動失敗", e)
 
             binding.statusText.text =
                 "カメラを起動できませんでした"
@@ -735,10 +763,10 @@ class BringActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // 部品供給モードを初期状態に戻す
+    // 買物モードを初期状態に戻す
     // =========================================================
 
-    private fun resetSupplyState() {
+    private fun resetBuyState() {
 
         // 読み取り状態をリセット
         isScanRequested = false
@@ -751,7 +779,7 @@ class BringActivity : AppCompatActivity() {
         isParentConfirmed = false
 
         // 画面表示を初期状態に戻す
-        binding.modeText.text = "部品供給モード"
+        binding.modeText.text = "買物モード"
         binding.readButton.text = "読み取り"
         binding.readButton.isEnabled = isExcelLoaded
         binding.statusText.text =
@@ -829,7 +857,7 @@ class BringActivity : AppCompatActivity() {
             ).show()
 
             Log.w(
-                "Supply",
+                "Buy",
                 "親品番なし: $extractedCode"
             )
 
@@ -870,7 +898,7 @@ class BringActivity : AppCompatActivity() {
         )
 
         Log.d(
-            "Supply",
+            "Buy",
             "親品番確定: $parentCode"
         )
     }
@@ -878,7 +906,7 @@ class BringActivity : AppCompatActivity() {
 
 
     // =====================================================
-    // 子品番・供給場所QR処理
+    // 子品番・買物場所QR処理
     // 1回目：部品QR
     // 2回目：部品QR + #
     // =====================================================
@@ -941,10 +969,10 @@ class BringActivity : AppCompatActivity() {
             // ★ 文字色を黒色に戻す
             binding.topCodeText.setTextColor(Color.BLACK)
 
-            binding.bottomStatusText.text = "供給QR待ち"
+            binding.bottomStatusText.text = "ロケQR待ち"
 
             binding.statusText.text =
-                "供給場所QRを読み取ってください"
+                "ロケQRを読み取ってください"
 
 
             HistoryManager.addHistory(
@@ -957,7 +985,7 @@ class BringActivity : AppCompatActivity() {
             )
 
             Log.d(
-                "Supply",
+                "Buy",
                 "部品QR記憶: $selectedChildCode"
             )
 
@@ -965,13 +993,13 @@ class BringActivity : AppCompatActivity() {
         }
 
         // -------------------------------------------------
-        // 2回目：供給場所QRを照合
+        // 2回目：買物場所QRを照合
         // -------------------------------------------------
 
-        val expectedSupplyCode = "${selectedChildCode}#"
+        val expectedBuyCode = "${selectedChildCode}#"
 
 
-        if (code.trim() == expectedSupplyCode) {
+        if (code.trim() == expectedBuyCode) {
 
             // 前回の完了タイマーを解除
             mainHandler.removeCallbacks(clearCompletionRunnable)
@@ -980,7 +1008,7 @@ class BringActivity : AppCompatActivity() {
             HistoryManager.addHistory(
                 this,
                 mode = MODE_NAME,
-                action = "供給QR読取",
+                action = "ロケQR読取",
                 parentCode = parentCode,
                 childCode = code,
                 method = "QR"
@@ -1005,7 +1033,7 @@ class BringActivity : AppCompatActivity() {
             ).show()
 
             Log.d(
-                "Supply",
+                "Buy",
                 "照合完了: 親品番=$parentCode, 子品番=$selectedChildCode"
             )
 
@@ -1020,31 +1048,31 @@ class BringActivity : AppCompatActivity() {
 
 
         // -------------------------------------------------
-        // 供給場所QRが一致しない場合
+        // ロケQRが一致しない場合
         // -------------------------------------------------
 
         binding.statusText.text =
-            "供給場所QRが一致しません。\n正しいQRを読んでください"
+            "ロケQRが一致しません。\n正しいQRを読んでください"
 
         Toast.makeText(
             this,
-            "供給場所QRが一致しません",
+            "ロケQRが一致しません",
             Toast.LENGTH_SHORT
         ).show()
 
         HistoryManager.addHistory(
             this,
             mode = MODE_NAME,
-            action = "供給QR不一致",
+            action = "ロケQR不一致",
             parentCode = parentCode,
             childCode = code,
             method = "QR"
         )
 
         Log.w(
-            "Supply",
-            "供給場所QR不一致: " +
-                    "期待値=$expectedSupplyCode, 読取値=$code"
+            "Buy",
+            "ロケQR不一致: " +
+                    "期待値=$expectedBuyCode, 読取値=$code"
         )
     }
 
@@ -1073,7 +1101,7 @@ class BringActivity : AppCompatActivity() {
         super.onResume()
 
         if (::binding.isInitialized && isNavigating) {
-            resetSupplyState()
+            resetBuyState()
         }
 
         if (::cameraExecutor.isInitialized) {

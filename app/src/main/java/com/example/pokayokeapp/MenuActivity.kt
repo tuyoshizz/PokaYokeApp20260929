@@ -43,12 +43,26 @@ class MenuActivity : AppCompatActivity() {
             )
         }
 
-        // 買物/供給モード
+        // 買物モード
+        binding.btnBuy.setOnClickListener {
+            HistoryManager.addHistory(
+                this,
+                mode = "買物",
+                action = "買物モード開始",
+                method = "-"
+            )
+
+            startActivity(
+                Intent(this, BuyActivity::class.java)
+            )
+        }
+
+        // 供給モード
         binding.btnSupply.setOnClickListener {
             HistoryManager.addHistory(
                 this,
-                mode = "買物/供給",
-                action = "買物/供給モード開始",
+                mode = "供給",
+                action = "供給モード開始",
                 method = "-"
             )
 
