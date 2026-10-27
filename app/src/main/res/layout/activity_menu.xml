@@ -28,6 +28,7 @@
         android:orientation="vertical"
         android:gravity="center">
 
+        <!-- ピッキングモード廃止
         <Button
             android:id="@+id/btnPicking"
             android:text="ﾋﾟｯｷﾝｸﾞ兼返却モード"
@@ -35,6 +36,7 @@
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"/>
+            -->
 
         <Button
             android:id="@+id/btnReturn"

@@ -145,6 +145,9 @@ class HistoryAdapter(
             // =================================================
 
             item.action == "親品番読取" ||
+                    item.action == "親品番決定" ||
+                    item.action == "ロケQR読取" ||
+                    item.action == "供給QR読取" ||
                     item.action == "ピッキング完了" -> {
 
                 holder.itemView.setBackgroundColor(
@@ -186,6 +189,8 @@ class HistoryAdapter(
 
             item.action == "段替えモード開始" ||
                     item.action == "ピッキングモード開始" ||
+                    item.action == "買物モード開始" ||
+                    item.action == "供給モード開始" ||
                             item.action == "部品供給モード開始" -> {
 
                 holder.itemView.setBackgroundColor(

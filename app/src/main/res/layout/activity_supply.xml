@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="買物/供給モード"
+            android:text="供給モード"
             android:textColor="#222222"
             android:textSize="14sp"
             android:textStyle="bold" />

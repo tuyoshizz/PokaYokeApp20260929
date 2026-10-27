@@ -57,6 +57,12 @@ class SupplyActivity : AppCompatActivity() {
     // ★ 子品番の名前
     private var selectedChildName = ""
 
+    // 供給番号
+    private var selectedSupplyNo = ""
+
+    // 子品番ごとの供給番号
+    private val supplyNumbers = mutableMapOf<String, String>()
+
     // 子品番ごとの名前
     private val childNames = mutableMapOf<String, String>()
 
@@ -129,7 +135,7 @@ class SupplyActivity : AppCompatActivity() {
         topPanel = findViewById(R.id.topPanel)
 
         // モード表示
-        binding.modeText.text = "供給モード"
+        binding.modeText.text = "供給"
 
         // 読み取りボタン
         binding.readButton.text = "読み取り"
@@ -353,6 +359,7 @@ class SupplyActivity : AppCompatActivity() {
         val file = getExcelFile()
 
         val loadedChildNames = mutableMapOf<String, String>()
+        val loadedSupplyNumbers = mutableMapOf<String, String>()
 
         Log.d(
             "Supply",
@@ -416,6 +423,12 @@ class SupplyActivity : AppCompatActivity() {
                                 row.getCell(2)
                             ).trim()
 
+                        // E列：供給番号
+                        val supplyNo =
+                            getCellValue(
+                                row.getCell(4)
+                            ).trim()
+
                         if (
                             parent.isNotEmpty() &&
                             child.isNotEmpty()
@@ -433,6 +446,10 @@ class SupplyActivity : AppCompatActivity() {
                             if (childName.isNotEmpty()) {
                                 loadedChildNames[normalizeCode(child)] = childName
                             }
+                            // 子品番と供給番号を対応付ける
+                            if (supplyNo.isNotEmpty()) {
+                                loadedSupplyNumbers[normalizeCode(child)] = supplyNo
+                            }
                         }
                     }
                 }
@@ -444,6 +461,10 @@ class SupplyActivity : AppCompatActivity() {
             // ★ 子品番の名前一覧を更新
             childNames.clear()
             childNames.putAll(loadedChildNames)
+
+            // 供給番号一覧を更新
+            supplyNumbers.clear()
+            supplyNumbers.putAll(loadedSupplyNumbers)
 
             parentChildren.clear()
             parentChildren.putAll(loadedData)
@@ -759,7 +780,7 @@ class SupplyActivity : AppCompatActivity() {
         isParentConfirmed = false
 
         // 画面表示を初期状態に戻す
-        binding.modeText.text = "供給モード"
+        binding.modeText.text = "供給"
         binding.readButton.text = "読み取り"
         binding.readButton.isEnabled = isExcelLoaded
         binding.statusText.text =
@@ -935,13 +956,19 @@ class SupplyActivity : AppCompatActivity() {
             // 部品QRを記憶
             selectedChildCode = matchedChild
 
-            // ★ 子品番に対応する名前を取得
+            // 子品番に対応する名前を取得
             selectedChildName =
                 childNames[normalizeCode(selectedChildCode)] ?: "名前未登録"
 
-            // ★ 部品名と品番を2行で表示
+            // 子品番に対応する供給番号を取得
+            selectedSupplyNo =
+                supplyNumbers[normalizeCode(selectedChildCode)] ?: "供給番号未登録"
+
+            // 部品名・品番・供給番号を3行で表示
             binding.topCodeText.text =
-                "部品：$selectedChildName\n品番：$selectedChildCode"
+                "部品：$selectedChildName\n" +
+                        "品番：$selectedChildCode\n" +
+                            "供給番号：$selectedSupplyNo"
 
             // 上側を緑色にする
             topPanel.setBackgroundColor(Color.GREEN)
@@ -972,14 +999,31 @@ class SupplyActivity : AppCompatActivity() {
             return
         }
 
-        // -------------------------------------------------
-        // 2回目：供給場所QRを照合
-        // -------------------------------------------------
+// -------------------------------------------------
+// 2回目：供給番号QRを照合
+// -------------------------------------------------
 
-        val expectedSupplyCode = "${selectedChildCode}#"
+// 選択中の子品番に対応する供給番号を取得
+        val expectedSupplyCode =
+            supplyNumbers[normalizeCode(selectedChildCode)].orEmpty()
 
+// 供給番号が未登録の場合
+        if (expectedSupplyCode.isEmpty()) {
 
-        if (code.trim() == expectedSupplyCode) {
+            binding.statusText.text =
+                "この部品の供給番号が登録されていません"
+
+            Toast.makeText(
+                this,
+                "ExcelのE列に供給番号を登録してください",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            return
+        }
+
+// 読み取ったQRと供給番号を比較
+        if (normalizeCode(code) == normalizeCode(expectedSupplyCode)) {
 
             // 前回の完了タイマーを解除
             mainHandler.removeCallbacks(clearCompletionRunnable)
@@ -1014,7 +1058,9 @@ class SupplyActivity : AppCompatActivity() {
 
             Log.d(
                 "Supply",
-                "照合完了: 親品番=$parentCode, 子品番=$selectedChildCode"
+                "照合完了: 親品番=$parentCode, " +
+                        "子品番=$selectedChildCode, " +
+                        "供給番号=$expectedSupplyCode"
             )
 
             // 1秒後に部品の照合状態だけをリセット
@@ -1051,7 +1097,7 @@ class SupplyActivity : AppCompatActivity() {
 
         Log.w(
             "Supply",
-            "供給場所QR不一致: " +
+            "供給番号不一致: " +
                     "期待値=$expectedSupplyCode, 読取値=$code"
         )
     }

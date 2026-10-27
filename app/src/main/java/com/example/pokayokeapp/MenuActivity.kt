@@ -17,17 +17,17 @@ class MenuActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // ピッキングモード
-        binding.btnPicking.setOnClickListener {
-            HistoryManager.addHistory(
-                this,
-                mode = "ピッキング",
-                action = "ピッキングモード開始"
-            )
-
-            startActivity(
-                Intent(this, MainActivity::class.java)
-            )
-        }
+        //binding.btnPicking.setOnClickListener {
+        //    HistoryManager.addHistory(
+        //        this,
+        //        mode = "ピッキング",
+        //        action = "ピッキングモード開始"
+        //    )
+        //
+        //    startActivity(
+        //        Intent(this, MainActivity::class.java)
+        //    )
+        //}
 
         // 段替えモード
         binding.btnReturn.setOnClickListener {

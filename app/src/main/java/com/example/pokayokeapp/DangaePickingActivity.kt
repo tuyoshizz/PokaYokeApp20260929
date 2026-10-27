@@ -482,7 +482,7 @@ class DangaePickingActivity : AppCompatActivity() {
             // =================================================
 
             val currentParts =
-                mutableMapOf<String, ChildItem>()
+                mutableListOf<ChildItem>()
 
 
             // =================================================
@@ -543,7 +543,7 @@ class DangaePickingActivity : AppCompatActivity() {
 
 
                 // -----------------------------------------
-                // 不正データ
+                // データ不備によりスキップする条件
                 // -----------------------------------------
 
                 if (
@@ -551,7 +551,14 @@ class DangaePickingActivity : AppCompatActivity() {
                     child.isEmpty() ||
                     location.isEmpty()
                 ) {
-
+                    Log.w(
+                        "DangaeExcel",
+                        "スキップ: 行=${i + 1}, " +
+                                "親品番=[$parent], " +
+                                "子品番=[$child], " +
+                                "名称=[$name], " +
+                                "場所=[$location]"
+                    )
                     continue
                 }
 
@@ -580,23 +587,27 @@ class DangaePickingActivity : AppCompatActivity() {
                     currentParentCode
                 ) {
 
-                    currentParts[
-                        location
-                    ] =
+                    currentParts.add(
                         ChildItem(
-
                             code = child,
-
                             name = name,
-
                             location = location,
-
                             checked = false,
-
                             parentCode = parent
                         )
+                    )
+                    Log.d(
+                        "DangaeExcel",
+                        "行=${i + 1}, " +
+                                "親品番=[$parent], " +
+                                "子品番=[$child], " +
+                                "名称=[$name], " +
+                                "場所=[$location]"
+                    )
                 }
             }
+
+
 
 
             // =================================================
@@ -616,80 +627,62 @@ class DangaePickingActivity : AppCompatActivity() {
 
 
             // =================================================
-            // 段替え対象を抽出
-            // =================================================
+// 段替え対象を抽出
+// =================================================
 
-            for (
-            entry in currentParts
-            ) {
+            for (currentItem in currentParts) {
 
-                val location =
-                    entry.key
+                val location = currentItem.location
+                val oldCode = lastParts[location]
 
-                val currentItem =
-                    entry.value
-
-                val oldCode =
-                    lastParts[
-                        location
-                    ]
-
+                // デバッグログ
+                Log.d(
+                    "Dangae",
+                    "親品番=$currentParentCode, " +
+                            "場所=$location, " +
+                            "子品番=${currentItem.code}, " +
+                            "前回品番=$oldCode, " +
+                            "名称=${currentItem.name}"
+                )
 
                 // -----------------------------------------
-                // 前回に存在しない
-                // → 新規追加
+                // 前回に存在しない → 新規追加
                 // -----------------------------------------
 
-                if (
-                    oldCode == null
-                ) {
-
-                    list.add(
-                        currentItem
-                    )
-
+                if (oldCode == null) {
+                    list.add(currentItem)
                     continue
                 }
 
-
                 // -----------------------------------------
-                // 前回と違う
-                // → 段替え対象
+                // 前回と違う → 段替え対象
                 // -----------------------------------------
 
-                if (
-                    oldCode !=
-                    currentItem.code
-                ) {
-
-                    list.add(
-                        currentItem
-                    )
+                if (oldCode != currentItem.code) {
+                    list.add(currentItem)
                 }
             }
 
 
-            // =================================================
-            // RecyclerView更新
-            // =================================================
+// =================================================
+// RecyclerView更新
+// =================================================
 
             adapter.notifyDataSetChanged()
 
 
-            // =================================================
-            // 残り件数
-            // =================================================
+// =================================================
+// 残り件数
+// =================================================
 
             updateRemainingCount()
 
 
-            // =================================================
-            // 対象なし
-            // =================================================
+// =================================================
+// 対象なし
+// =================================================
 
-            if (
-                list.isEmpty()
-            ) {
+            if (list.isEmpty()) {
 
                 binding.emptyText.text =
                     "段替え対象の部品はありません"

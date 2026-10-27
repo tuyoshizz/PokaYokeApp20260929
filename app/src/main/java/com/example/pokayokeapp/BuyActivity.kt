@@ -137,7 +137,7 @@ class BuyActivity : AppCompatActivity() {
         topPanel = findViewById(R.id.topPanel)
 
         // モード表示
-        binding.modeText.text = "買物モード"
+        binding.modeText.text = "買物"
 
         // 読み取りボタン
         binding.readButton.text = "読み取り"
@@ -776,10 +776,12 @@ class BuyActivity : AppCompatActivity() {
         // 品番情報をクリア
         parentCode = ""
         selectedChildCode = ""
+        selectedChildName = ""
+        selectedLocationNumber = ""
         isParentConfirmed = false
 
         // 画面表示を初期状態に戻す
-        binding.modeText.text = "買物モード"
+        binding.modeText.text = "買物"
         binding.readButton.text = "読み取り"
         binding.readButton.isEnabled = isExcelLoaded
         binding.statusText.text =
@@ -955,13 +957,19 @@ class BuyActivity : AppCompatActivity() {
             // 部品QRを記憶
             selectedChildCode = matchedChild
 
-            // ★ 子品番に対応する名前を取得
+            // 子品番に対応する部品名を取得
             selectedChildName =
                 childNames[normalizeCode(selectedChildCode)] ?: "名前未登録"
 
-            // ★ 部品名と品番を2行で表示
+            // 子品番に対応するロケNo.を取得
+            selectedLocationNumber =
+                childLocationNumbers[normalizeCode(selectedChildCode)] ?: "未登録"
+
+            // 部品名・品番・ロケNo.を3行で表示
             binding.topCodeText.text =
-                "部品：$selectedChildName\n品番：$selectedChildCode"
+                "部品名：$selectedChildName\n" +
+                        "品番：$selectedChildCode\n" +
+                        "ロケNo.：$selectedLocationNumber"
 
             // 上側を緑色にする
             topPanel.setBackgroundColor(Color.GREEN)
