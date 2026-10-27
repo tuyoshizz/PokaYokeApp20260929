@@ -71,6 +71,20 @@ class MenuActivity : AppCompatActivity() {
             )
         }
 
+        // 部品格納モード
+        binding.btnStore.setOnClickListener {
+            HistoryManager.addHistory(
+                this,
+                mode = "部品格納",
+                action = "部品格納モード開始",
+                method = "-"
+            )
+
+            startActivity(
+                Intent(this, StoreActivity::class.java)
+            )
+        }
+
         // 読み取り履歴
         binding.btnSpecial.setOnClickListener {
             startActivity(

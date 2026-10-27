@@ -139,7 +139,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:padding="8dp"
-                android:text="供給QRをスキャンしてください"
+                android:text="ロケQRをスキャンしてください"
                 android:textColor="#000000"
                 android:textSize="24sp" />
 

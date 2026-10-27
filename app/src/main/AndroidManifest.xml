@@ -73,6 +73,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".StoreActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SupplyNextActivity"
             android:exported="false" />
 
