@@ -395,7 +395,7 @@ class StoreActivity : AppCompatActivity() {
                 this,
                 mode = MODE_NAME,
                 action = "品番読取",
-                childCode = code,
+                childCode = selectedCode,
                 method = "QR"
             )
             binding.topCodeText.text =

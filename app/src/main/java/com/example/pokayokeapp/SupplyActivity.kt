@@ -258,12 +258,27 @@ class SupplyActivity : AppCompatActivity() {
         // 下側の初期表示
         binding.bottomStatusText.text = ""
 
+
         // 戻るボタン
         binding.backButton.setOnClickListener {
+
+
+            //異常中はメニューへの移行を禁止
+            if (ENABLE_ABNORMAL_LOCK && isAbnormalLocked) {
+                Toast.makeText(
+                    this,
+                    "異常停止中です。解除用QRを読み取ってください",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
+            }
+
             val intent = Intent(this, MenuActivity::class.java)
             startActivity(intent)
             finish()
         }
+
 
         // QR読み取りボタン
         binding.readButton.setOnClickListener {
@@ -273,10 +288,23 @@ class SupplyActivity : AppCompatActivity() {
         // 権限確認・Excel読み込み・カメラ起動
         checkStoragePermission()
 
+
         binding.resetParentButton.setOnClickListener {
+
+            if (ENABLE_ABNORMAL_LOCK && isAbnormalLocked) {
+                Toast.makeText(
+                    this,
+                    "異常停止中です。解除用QRを読み取ってください",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
+            }
+
             mainHandler.removeCallbacks(clearCompletionRunnable)
             resetSupplyState()
         }
+
 
         binding.shelfMapButton.setOnClickListener {
             val intent = Intent(this, ShelfMapActivity::class.java)
@@ -666,12 +694,10 @@ class SupplyActivity : AppCompatActivity() {
         return code.trim().uppercase(Locale.ROOT)
     }
 
-// =========================================================
-// 読み取り要求
-// =========================================================
 
     private fun requestScan() {
 
+        // Excel読み込み確認
         if (!isExcelLoaded) {
             Toast.makeText(
                 this,
@@ -681,6 +707,7 @@ class SupplyActivity : AppCompatActivity() {
             return
         }
 
+        // カメラ起動確認
         if (!isCameraRunning) {
             Toast.makeText(
                 this,
@@ -693,15 +720,18 @@ class SupplyActivity : AppCompatActivity() {
         if (isNavigating) return
         if (isScanRequested || isProcessingScan) return
 
+        // 異常ロック中でも解除用QRを読み取れるようにする
         isScanRequested = true
 
-        binding.readButton.isEnabled = false
-        binding.readButton.text = "読み取り中..."
+        binding.readButton.isEnabled = true
+        binding.readButton.text = "解除QR読み取り中..."
     }
+
 
 // =========================================================
 // 読み取りボタンを待機状態に戻す
 // =========================================================
+
 
     private fun finishScanButton() {
 
@@ -714,6 +744,7 @@ class SupplyActivity : AppCompatActivity() {
             binding.readButton.text = "読み取り"
         }
     }
+
 
 // =========================================================
 // カメラ初期化
@@ -919,45 +950,36 @@ class SupplyActivity : AppCompatActivity() {
 // QRコード処理
 // =========================================================
 
+
     private fun processScannedCode(rawCode: String) {
 
         val code = rawCode.trim()
 
         if (code.isEmpty() || isNavigating) return
 
-        // 異常ロック機能が有効な場合
-        if (ENABLE_ABNORMAL_LOCK) {
+        // 異常ロック中は解除用QRだけを受け付ける
+        if (ENABLE_ABNORMAL_LOCK && isAbnormalLocked) {
 
-            // 異常中は解除用QRだけを受け付ける
-            if (isAbnormalLocked) {
-
-                if (code == RELEASE_QR_CODE) {
-                    releaseAbnormalLock()
-                } else {
-                    binding.statusText.text =
-                        "異常停止中です。\n" +
-                                "解除用QR「kaijo」を読み取ってください"
-
-                    Log.w(
-                        "Supply",
-                        "異常ロック中のQRを拒否: $code"
-                    )
-                }
-
-                return
+            if (code.equals(RELEASE_QR_CODE, ignoreCase = true)) {
+                releaseAbnormalLock()
+            } else {
+                binding.statusText.text =
+                    "異常停止中です。\n解除用QR「kaijo」を読み取ってください"
             }
 
-            // 通常時でも解除用QRが読み取られた場合は
-            // 通常の部品・供給番号として処理しない
-            if (code == RELEASE_QR_CODE) {
-                Toast.makeText(
-                    this,
-                    "現在、解除が必要な異常はありません",
-                    Toast.LENGTH_SHORT
-                ).show()
+            return
+        }
 
-                return
-            }
+        // 通常時に解除用QRを読み取った場合
+        if (ENABLE_ABNORMAL_LOCK &&
+            code.equals(RELEASE_QR_CODE, ignoreCase = true)
+        ) {
+            Toast.makeText(
+                this,
+                "現在、解除が必要な異常はありません",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
         }
 
         if (!isParentConfirmed) {
@@ -966,6 +988,7 @@ class SupplyActivity : AppCompatActivity() {
             processChildCode(code)
         }
     }
+
 
 // =========================================================
 // 親品番処理
@@ -1053,7 +1076,6 @@ class SupplyActivity : AppCompatActivity() {
     }
 
 
-
     // =====================================================
     // 子品番・供給場所QR処理
     // 1回目：部品QR
@@ -1116,7 +1138,7 @@ class SupplyActivity : AppCompatActivity() {
             binding.topCodeText.text =
                 "部品：$selectedChildName\n" +
                         "品番：$selectedChildCode\n" +
-                            "供給番号：$selectedSupplyNo"
+                        "供給番号：$selectedSupplyNo"
 
             // 上側を緑色にする
             topPanel.setBackgroundColor(Color.GREEN)
@@ -1221,9 +1243,9 @@ class SupplyActivity : AppCompatActivity() {
         }
 
 
-// -------------------------------------------------
-// 供給場所QRが一致しない場合
-// -------------------------------------------------
+        // -------------------------------------------------
+        // 供給場所QRが一致しない場合
+        // -------------------------------------------------
 
         HistoryManager.addHistory(
             this,
@@ -1260,27 +1282,6 @@ class SupplyActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT
             ).show()
         }
-
-        Toast.makeText(
-            this,
-            "供給場所QRが一致しません",
-            Toast.LENGTH_SHORT
-        ).show()
-
-        HistoryManager.addHistory(
-            this,
-            mode = MODE_NAME,
-            action = "供給QR不一致",
-            parentCode = parentCode,
-            childCode = code,
-            method = "QR"
-        )
-
-        Log.w(
-            "Supply",
-            "供給番号不一致: " +
-                    "期待値=$expectedSupplyCode, 読取値=$code"
-        )
     }
 
 
@@ -1314,6 +1315,24 @@ class SupplyActivity : AppCompatActivity() {
         if (::cameraExecutor.isInitialized) {
             startCamera()
         }
+    }
+
+
+    // Android本体のの　「←」戻る操作を制御
+    @Deprecated("Deprecated in Android")
+    override fun onBackPressed() {
+
+        if (ENABLE_ABNORMAL_LOCK && isAbnormalLocked) {
+            Toast.makeText(
+                this,
+                "異常停止中です。解除用QRを読み取ってください",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            return
+        }
+
+        super.onBackPressed()
     }
 
 
