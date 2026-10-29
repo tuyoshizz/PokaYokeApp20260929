@@ -396,28 +396,41 @@ class DangaeActivity : AppCompatActivity() {
                         }
 
 
-                        val code =
+                        val qrCode =
                             barcodes
                                 .firstOrNull()
                                 ?.rawValue
                                 ?.trim()
                                 ?: ""
 
+                        if (qrCode.isNotEmpty()) {
 
-                        if (code.isNotEmpty()) {
+                            // QRコードから照合用の品番を抽出
+                            val code = extractParentCode(qrCode)
 
-                            // ---------------------------------
                             // 1回読み取ったら停止
-                            // ---------------------------------
-
                             isScanning = false
-
 
                             runOnUiThread {
 
-                                compareParentCode(
-                                    code
-                                )
+                                if (code.isEmpty()) {
+
+                                    // 品番形式が不正
+                                    binding.txtParent.text =
+                                        "品番形式エラー：再読取してください"
+
+                                    binding.button.isEnabled = true
+                                    binding.button.text = "再読取"
+
+                                    binding.button.setOnClickListener {
+                                        resetScan()
+                                    }
+
+                                } else {
+
+                                    // 抽出した品番で照合
+                                    compareParentCode(code)
+                                }
                             }
                         }
                     }
@@ -529,6 +542,56 @@ class DangaeActivity : AppCompatActivity() {
         )
     }
 
+
+// =========================================================
+// QRコードから照合用の親品番を抽出
+// 最初の「-」を基準に
+// 前6文字 + "-" + 後ろ3文字
+// =========================================================
+
+// =========================================================
+// QRコードから照合用の親品番を抽出
+// ハイフンの前5文字 + "-" + 後ろ3文字
+// =========================================================
+
+    private fun extractParentCode(
+        qrCode: String
+    ): String {
+
+        val code = qrCode.trim()
+
+        // 最初のハイフンを検索
+        val hyphenIndex = code.indexOf('-')
+
+        // ハイフンがない場合
+        if (hyphenIndex == -1) {
+            return ""
+        }
+
+        // ハイフンの前に5文字以上必要
+        if (hyphenIndex < 5) {
+            return ""
+        }
+
+        // ハイフンの後ろに3文字以上必要
+        if (code.length < hyphenIndex + 4) {
+            return ""
+        }
+
+        // ハイフンの直前6文字
+        val prefix = code.substring(
+            hyphenIndex - 6,
+            hyphenIndex
+        )
+
+        // ハイフンの直後3文字
+        val suffix = code.substring(
+            hyphenIndex + 1,
+            hyphenIndex + 4
+        )
+
+        return "$prefix-$suffix"
+    }
 
     // =========================================================
     // 比較画面へ
