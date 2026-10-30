@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="8dp">
+
+    <!-- 上段：左側に操作ボタン、右側にカメラ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:orientation="horizontal">
+
+        <!-- 左側：操作ボタン -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingEnd="6dp">
+
+            <!-- モード表示 -->
+            <TextView
+                android:id="@+id/modeText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="実践買物"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#000000"
+                android:gravity="center"
+                android:padding="4dp" />
+
+            <!-- 戻る・棚マップ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/backButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:text="戻る"
+                    android:textSize="7sp"
+                    android:minWidth="0dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp" />
+
+                <Button
+                    android:id="@+id/shelfMapButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="棚マップ"
+                    android:textSize="10sp"
+                    android:minWidth="0dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp" />
+
+            </LinearLayout>
+
+            <!-- 親品番リセット -->
+            <Button
+                android:id="@+id/resetParentButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="親品番リセット"
+                android:textSize="10sp"
+                android:minWidth="0dp"
+                android:layout_marginTop="6dp" />
+
+        </LinearLayout>
+
+        <!-- 右側：カメラビュー -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.8" />
+
+    </LinearLayout>
+
+    <!-- 親品番表示 -->
+    <TextView
+        android:id="@+id/parentCodeText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="親品番："
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:padding="6dp" />
+
+    <!-- 親品番確定後に表示する分割ビュー -->
+    <LinearLayout
+        android:id="@+id/splitView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="#FFFFFF">
+
+        <!-- 上側パネル -->
+        <LinearLayout
+            android:id="@+id/topPanel"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="3"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="#FFFFFF"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/topCodeText"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="部品QR待ち"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#000000"
+                android:gravity="center"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+        <!-- 上下の区切り線 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#666666" />
+
+        <!-- 下側パネル -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2"
+            android:background="#F2F2F2"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/bottomStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text=""
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#000000"
+                android:gravity="center" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- 状態メッセージ -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="親品番のQRコードを読み取ってください"
+        android:textSize="12sp"
+        android:textColor="#222222"
+        android:gravity="center"
+        android:minHeight="48dp"
+        android:padding="6dp" />
+
+    <!-- 読み取りボタン：画面下部に配置 -->
+    <Button
+        android:id="@+id/readButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="読み取り"
+        android:textSize="26sp"
+        android:minHeight="80dp" />
+
+</LinearLayout>

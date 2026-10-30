@@ -29,6 +29,20 @@ class MenuActivity : AppCompatActivity() {
         //    )
         //}
 
+        // 標準モード
+        binding.btnPractical.setOnClickListener {
+            HistoryManager.addHistory(
+                this,
+                mode = "標準",
+                action = "標準モード開始",
+                method = "-"
+            )
+
+            startActivity(
+                Intent(this, PracticalActivity::class.java)
+            )
+        }
+
         // 段替えモード
         binding.btnReturn.setOnClickListener {
             HistoryManager.addHistory(

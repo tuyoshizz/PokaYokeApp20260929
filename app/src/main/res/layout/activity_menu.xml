@@ -45,6 +45,14 @@
             android:layout_height="wrap_content"
             android:layout_margin="8dp"/>
 
+
+        <Button
+            android:id="@+id/btnPractical"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="標準モード"
+            android:layout_margin="8dp" />
+
         <Button
             android:id="@+id/btnBuy"
             android:layout_width="200dp"
