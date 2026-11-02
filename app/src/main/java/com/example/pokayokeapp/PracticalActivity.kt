@@ -30,11 +30,20 @@ import java.io.File
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.widget.AdapterView
+import android.widget.Spinner
 
 class PracticalActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPracticalBinding
     private lateinit var cameraExecutor: ExecutorService
+
+    // 音声再生
+    private var toneGenerator: ToneGenerator? = null
 
     private var cameraProvider: ProcessCameraProvider? = null
     private var isCameraRunning = false
@@ -99,7 +108,255 @@ class PracticalActivity : AppCompatActivity() {
     // 上側パネル
     private lateinit var topPanel: View
 
+    // =========================================================
+    // 言語切り替え設定
+    // =========================================================
+
+    private var currentLanguage = "ja"
+
+    private val languagePrefs by lazy {
+        getSharedPreferences("language_settings", MODE_PRIVATE)
+    }
+
+    private fun loadLanguage() {
+        currentLanguage =
+            languagePrefs.getString("language", "ja") ?: "ja"
+    }
+
+    private fun saveLanguage(language: String) {
+        currentLanguage = language
+
+        languagePrefs.edit()
+            .putString("language", language)
+            .apply()
+
+        updateLanguage()
+    }
+
+
+// =========================================================
+// 翻訳辞書
+// =========================================================
+
+    private val translations = mapOf(
+
+        "ja" to mapOf(
+            "read" to "読み取り",
+            "reading" to "読み取り中...",
+            "parent_wait" to "親品番のQRコードを読み取ってください",
+            "part_wait" to "部品QR待ち",
+            "location_wait" to "ロケQR待ち",
+            "read_location" to "ロケQRを読み取ってください",
+            "success" to "照合完了！",
+            "success_status" to "照合成功！",
+            "next_part" to "次の部品QRを読み取ってください",
+            "mismatch" to "ロケQRが一致しません。\n正しいQRを読んでください",
+            "mismatch_toast" to "ロケQRが一致しません",
+            "ok" to "OK",
+            "part_name" to "部品名",
+            "part_code" to "部品品番",
+            "location" to "ロケNo.",
+            "Supply_number" to "供給番号",
+            "parent" to "親品番",
+            "reset" to "リセット",
+            "parent_part" to "親品番",
+            "back" to "戻る",
+            "map" to "マップ",
+            "standard" to "標準",
+            "unknown" to "名前未登録",
+            "not_registered" to "未登録",
+            "no_excel" to "Excelを読み込めていません",
+
+            "kanban_check" to "子かんばんチェック",
+            "complete_count" to "完了",
+            "next_target" to "次の対象",
+            "required_count" to "必要枚数",
+            "read_count" to "読取済み",
+            "sheets" to "枚",
+            "read_kanban" to "子かんばんQRを読み取ってください",
+            "check_in_progress" to "子かんばんチェック中です\n必要枚数分のQRを読み取ってください",
+
+            "check_excluded" to "段替えチェック対象外の子かんばんです",
+            "not_check_target" to "この親品番のチェック対象ではありません"
+        ),
+
+        "en" to mapOf(
+            "read" to "Scan",
+            "reading" to "Scanning...",
+            "parent_wait" to "Please scan the parent QR code",
+            "part_wait" to "Waiting for part QR",
+            "location_wait" to "Waiting for location QR",
+            "read_location" to "Please scan the location QR",
+            "success" to "Matching Complete!",
+            "success_status" to "Match successful!",
+            "next_part" to "Please scan the next part QR",
+            "mismatch" to "Location QR does not match.\nPlease scan the correct QR.",
+            "mismatch_toast" to "Location QR mismatch",
+            "ok" to "OK",
+            "part_name" to "Part Name",
+            "part_code" to "Part Number",
+            "location" to "Location No.",
+            "Supply_number" to "Supply No.",
+            "parent" to "Parent Part No.",
+            "reset" to "Reset",
+            "parent_part" to "Parent Part No.",
+            "back" to "Back",
+            "map" to "Map",
+            "standard" to "Standard",
+            "unknown" to "Unknown",
+            "not_registered" to "Not registered",
+            "no_excel" to "Excel data is not loaded",
+
+            "kanban_check" to "Kanban Check",
+            "complete_count" to "Completed",
+            "next_target" to "Next Target",
+            "required_count" to "Required",
+            "read_count" to "Scanned",
+            "sheets" to "pcs",
+            "read_kanban" to "Please scan the child kanban QR code",
+            "check_in_progress" to "Kanban check in progress.Please\n scan the required number of QR codes",
+
+            "check_excluded" to "This child kanban is not included in the changeover check",
+            "not_check_target" to "This item is not a check target for the selected parent part number"
+        ),
+
+        "km" to mapOf(
+            "read" to "ស្កេន",
+            "reading" to "កំពុងស្កេន...",
+            "parent_wait" to "សូមស្កេន QR កូដផលិតផលមេ",
+            "part_wait" to "រង់ចាំ QR គ្រឿងបន្លាស់",
+            "location_wait" to "រង់ចាំ QR ទីតាំង",
+            "read_location" to "សូមស្កេន QR ទីតាំង",
+            "success" to "ផ្គូផ្គងបានជោគជ័យ!",
+            "success_status" to "ផ្គូផ្គងជោគជ័យ!",
+            "next_part" to "សូមស្កេន QR គ្រឿងបន្លាស់បន្ទាប់",
+            "mismatch" to "QR ទីតាំងមិនត្រូវគ្នាទេ។\nសូមស្កេន QR ត្រឹមត្រូវ។",
+            "mismatch_toast" to "QR ទីតាំងមិនត្រូវគ្នា",
+            "ok" to "ត្រឹមត្រូវ",
+            "part_name" to "ឈ្មោះគ្រឿងបន្លាស់",
+            "part_code" to "លេខកូដគ្រឿងបន្លាស់",
+            "location" to "លេខទីតាំង",
+            "Supply_number" to "លេខផ្គត់ផ្គង់",
+            "parent" to "លេខផលិតផលមេ",
+            "reset" to "កំណត់ឡើងវិញ",
+            "parent_part" to "លេខផលិតផលមេ",
+            "back" to "ត្រឡប់ក្រោយ",
+            "map" to "ផែនទី",
+            "standard" to "ស្តង់ដារ",
+            "unknown" to "មិនស្គាល់ឈ្មោះ",
+            "not_registered" to "មិនបានចុះបញ្ជី",
+            "no_excel" to "មិនទាន់បានផ្ទុកទិន្នន័យ Excel",
+
+            "kanban_check" to "ការត្រួតពិនិត្យកាន់បាន",
+            "complete_count" to "បានបញ្ចប់",
+            "next_target" to "គោលដៅបន្ទាប់",
+            "required_count" to "ចំនួនត្រូវការ",
+            "read_count" to "បានស្កេន",
+            "sheets" to "សន្លឹក",
+            "read_kanban" to "សូមស្កេន QR កូដកាន់បានរបស់គ្រឿងបន្លាស់",
+            "check_in_progress" to "កំពុងត្រួតពិនិត្យកាន់បាន\nសូមស្កេន QR កូដតាមចំនួនដែលត្រូវការ",
+
+            "check_excluded" to "កាន់បានគ្រឿងបន្លាស់នេះមិនស្ថិតក្នុងការត្រួតពិនិត្យប្តូរម៉ូដែលទេ",
+            "not_check_target" to "ធាតុនេះមិនស្ថិតក្នុងគោលដៅត្រួតពិនិត្យសម្រាប់លេខផលិតផលមេនេះទេ"
+        )
+    )
+
+    private fun t(key: String): String {
+        return translations[currentLanguage]?.get(key)
+            ?: translations["ja"]?.get(key)
+            ?: key
+    }
+
+    // =========================================================
+// 言語設定画面への反映
+// =========================================================
+
+    private fun setupLanguageSpinner() {
+
+        val spinner = findViewById<Spinner>(
+            R.id.languageSpinner
+        )
+
+        val savedLanguage = currentLanguage
+
+        val position = when (savedLanguage) {
+            "km" -> 1
+            "en" -> 2
+            else -> 0
+        }
+
+        spinner.setSelection(position, false)
+
+        spinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    val language = when (position) {
+                        1 -> "km"
+                        2 -> "en"
+                        else -> "ja"
+                    }
+
+                    if (language != currentLanguage) {
+                        saveLanguage(language)
+                    }
+                }
+
+                override fun onNothingSelected(
+                    parent: AdapterView<*>?
+                ) {}
+            }
+    }
+
+    // =========================================================
+// 言語変更後の画面更新
+// =========================================================
+
+    private fun updateLanguage() {
+
+        binding.modeText.text = t("standard")
+        binding.readButton.text = t("read")
+        binding.backButton.text = t("back")
+        binding.resetParentButton.text = t("reset")
+        binding.shelfMapButton.text = t("map")
+
+        binding.parentCodeText.text =
+            "${t("parent")}：$parentCode"
+
+        if (!isParentConfirmed) {
+
+            binding.statusText.text = t("parent_wait")
+            binding.topCodeText.text = t("parent_wait")
+
+        } else if (isKanbanCheckMode) {
+
+            showKanbanCheckProgress()
+
+        } else if (selectedChildCode.isNotEmpty()) {
+
+            binding.topCodeText.text =
+                "${t("part_name")}：$selectedChildName\n" +
+                        "${t("part_code")}：$selectedChildCode\n" +
+                        "${t("location")}：$selectedLocationNumber"
+
+            binding.bottomStatusText.text = t("location_wait")
+            binding.statusText.text = t("read_location")
+
+        } else {
+
+            binding.topCodeText.text = t("part_wait")
+            binding.statusText.text = t("read_next_part")
+        }
+    }
+
     companion object {
+
+
         private const val REQUEST_CAMERA = 100
         private const val REQUEST_STORAGE = 101
 
@@ -108,6 +365,20 @@ class PracticalActivity : AppCompatActivity() {
 
         private const val MODE_NAME = "買物"
         private const val TAG = "Practical"
+
+        // =========================================================
+        // 音・バイブレーション機能 ON/OFF設定
+        // =========================================================
+
+        // 照合完了音
+        private const val ENABLE_OK_SOUND = true
+
+        // 照合不一致音
+        private const val ENABLE_NG_SOUND = true
+
+        // 照合不一致時のバイブレーション
+        private const val ENABLE_NG_VIBRATION = true
+
     }
 
     // 照合成功後の表示リセット
@@ -124,16 +395,18 @@ class PracticalActivity : AppCompatActivity() {
             selectedChildCode = ""
             selectedChildName = ""
             selectedLocationNumber = ""
+            selectedSupplyNumber = ""
 
-            binding.topCodeText.text = "部品QR待ち"
+            binding.topCodeText.text = t("part_wait")
+
+            binding.statusText.text = t("read_next_part")
+
             topPanel.setBackgroundColor(Color.WHITE)
             binding.topCodeText.setTextColor(Color.BLACK)
 
-            binding.bottomStatusText.text = ""
             binding.bottomStatusText.setTextColor(Color.BLACK)
 
-            binding.statusText.text =
-                "次の部品QRを読み取ってください"
+            binding.statusText.text =t("next_part")
         }
     }
 
@@ -147,34 +420,52 @@ class PracticalActivity : AppCompatActivity() {
         binding = ActivityPracticalBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        loadLanguage()
+        setupLanguageSpinner()
+
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        // 音声初期化
+        try {
+            toneGenerator = ToneGenerator(
+                AudioManager.STREAM_NOTIFICATION,
+                100
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "音声初期化失敗", e)
+        }
 
         topPanel = findViewById(R.id.topPanel)
 
-        binding.modeText.text = "標準"
-        binding.readButton.text = "読み取り"
+// 画面の文字を翻訳辞書から取得
+        binding.modeText.text = t("standard")
+        binding.readButton.text = t("read")
 
-        binding.statusText.text =
-            "親品番のQRコードを読み取ってください"
+        binding.statusText.text = t("parent_wait")
 
-        binding.parentCodeText.text = "親品番："
+        binding.parentCodeText.text = t("parent") + "："
 
         binding.splitView.visibility = View.GONE
 
-        binding.topCodeText.text =
-            "親品番のQRコードを\n読み込んでください"
+        binding.topCodeText.text = t("parent_wait")
 
         topPanel.setBackgroundColor(Color.WHITE)
+
         binding.bottomStatusText.text = ""
 
+// 戻るボタンの動作
+        binding.backButton.text = t("back")
         binding.backButton.setOnClickListener {
             finish()
         }
 
+// 読み取りボタンの動作
         binding.readButton.setOnClickListener {
             requestScan()
         }
 
+// リセットボタンの表示と動作
+        binding.resetParentButton.text = t("reset")
         binding.resetParentButton.setOnClickListener {
             mainHandler.removeCallbacks(clearCompletionRunnable)
             resetPracticalState()
@@ -185,6 +476,7 @@ class PracticalActivity : AppCompatActivity() {
                 Intent(this, ShelfMapActivity::class.java)
             )
         }
+        updateLanguage()
 
         checkStoragePermission()
     }
@@ -449,16 +741,16 @@ class PracticalActivity : AppCompatActivity() {
                             loadedChildNames[childKey] = childName
                         }
 
-                        // 子品番とロケNo.を紐づける
+// 子品番とロケNo.を紐づける
                         if (locationNumber.isNotEmpty()) {
-                            loadedLocationNumbers[childKey] =
-                                locationNumber
-
-                            // 子品番と供給番号を紐づける
-                            if (supplyNumber.isNotEmpty()) {
-                                loadedSupplyNumbers[childKey] = supplyNumber
-                            }
+                            loadedLocationNumbers[childKey] = locationNumber
                         }
+
+// 子品番と供給番号を紐づける
+                        if (supplyNumber.isNotEmpty()) {
+                            loadedSupplyNumbers[childKey] = supplyNumber
+                        }
+
                     }
                 }
             }
@@ -482,8 +774,7 @@ class PracticalActivity : AppCompatActivity() {
             isExcelLoaded = true
             binding.readButton.isEnabled = true
 
-            binding.statusText.text =
-                "親品番のQRコードを読み取ってください"
+            binding.statusText.text =t("parent_wait")
 
             Log.d(
                 TAG,
@@ -589,7 +880,7 @@ private fun requestScan() {
 
     isScanRequested = true
     binding.readButton.isEnabled = false
-    binding.readButton.text = "読み取り中..."
+    binding.readButton.text = t("reading")
 }
 
 // =========================================================
@@ -601,7 +892,71 @@ private fun finishScanButton() {
 
     if (!isFinishing && !isDestroyed && !isNavigating) {
         binding.readButton.isEnabled = isExcelLoaded
-        binding.readButton.text = "読み取り"
+        binding.readButton.text = t("read")
+    }
+}
+// =========================================================
+// 照合完了音
+// =========================================================
+
+    private fun playOkSound() {
+        if (!ENABLE_OK_SOUND) return
+
+        try {
+            toneGenerator?.startTone(
+                ToneGenerator.TONE_PROP_ACK,
+                250
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "完了音再生失敗", e)
+        }
+    }
+
+
+// =========================================================
+// 照合不一致音
+// =========================================================
+
+private fun playNgSound() {
+    if (!ENABLE_NG_SOUND) return
+
+    try {
+        toneGenerator?.startTone(
+            ToneGenerator.TONE_PROP_NACK,
+            400
+        )
+    } catch (e: Exception) {
+        Log.e(TAG, "NG音再生失敗", e)
+    }
+}
+
+// =========================================================
+// 照合不一致時のバイブレーション
+// =========================================================
+
+private fun vibrateNg() {
+    if (!ENABLE_NG_VIBRATION) return
+
+    try {
+        val vibrator =
+            getSystemService(Vibrator::class.java)
+
+        if (vibrator?.hasVibrator() == true) {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(
+                        300,
+                        VibrationEffect.DEFAULT_AMPLITUDE
+                    )
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(300)
+            }
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "バイブレーション失敗", e)
     }
 }
 
@@ -773,7 +1128,7 @@ private fun processParentCode(qrCode: String) {
         selectedChildCode = ""
         isParentConfirmed = false
 
-        binding.parentCodeText.text = "親品番："
+        binding.parentCodeText.text = t("parent")+"："
         binding.splitView.visibility = View.GONE
 
         binding.topCodeText.text =
@@ -801,7 +1156,7 @@ private fun processParentCode(qrCode: String) {
     selectedLocationNumber = ""
     isParentConfirmed = true
 
-    binding.parentCodeText.text = "親品番：$parentCode"
+    binding.parentCodeText.text = t("parent")+"：$parentCode"
     binding.splitView.visibility = View.VISIBLE
 
     prepareKanbanCheck(parentKey)
@@ -838,7 +1193,7 @@ private fun prepareKanbanCheck(parentKey: String) {
     if (requiredKanbanCounts.isEmpty()) {
         isKanbanCheckMode = false
 
-        binding.topCodeText.text = "部品QR待ち"
+        binding.topCodeText.text = t("part_wait")
         topPanel.setBackgroundColor(Color.WHITE)
         binding.topCodeText.setTextColor(Color.BLACK)
 
@@ -873,12 +1228,12 @@ private fun processKanbanCode(code: String) {
     val requiredCount = requiredKanbanCounts[childKey]
 
     if (requiredCount == null) {
-        binding.statusText.text =
-            "段替えチェック対象外の子かんばんです"
+
+        binding.statusText.text = t("check_excluded")
 
         Toast.makeText(
             this,
-            "この親品番のチェック対象ではありません",
+            t("not_check_target"),
             Toast.LENGTH_SHORT
         ).show()
 
@@ -890,10 +1245,11 @@ private fun processKanbanCode(code: String) {
             childCode = code,
             method = "QR"
         )
-
         Log.w(TAG, "対象外子かんばん: $code")
+
         return
     }
+
 
     val scannedCount = scannedKanbanCounts[childKey] ?: 0
 
@@ -975,23 +1331,19 @@ private fun showKanbanCheckProgress() {
 
     topPanel.setBackgroundColor(Color.rgb(255, 244, 214))
     binding.topCodeText.setTextColor(Color.BLACK)
-
     binding.topCodeText.text =
-        "子かんばんチェック\n" +
-                "完了：$totalScanned / $totalRequired 枚\n" +
-                "次の対象：$nextChildName\n" +
-                "品番：${nextChild ?: ""}\n" +
-                "必要枚数：$nextRequired 枚\n" +
-                "読取済み：$nextScanned 枚"
+        "${t("kanban_check")}\n" +
+                "${t("complete_count")}：$totalScanned / $totalRequired ${t("sheets")}\n" +
+                "${t("next_target")}：$nextChildName\n" +
+                "${t("part_code")}：${nextChild ?: ""}\n" +
+                "${t("required_count")}：$nextRequired ${t("sheets")}\n" +
+                "${t("read_count")}：$nextScanned ${t("sheets")}"
 
-    binding.bottomStatusText.text =
-        "子かんばんQRを読み取ってください"
+    binding.bottomStatusText.text = t("read_kanban")
 
     binding.bottomStatusText.setTextColor(Color.BLACK)
 
-    binding.statusText.text =
-        "子かんばんチェック中です\n" +
-                "必要枚数分のQRを読み取ってください"
+    binding.statusText.text = t("check_in_progress")
 }
 
 // =========================================================
@@ -1042,11 +1394,7 @@ private fun finishKanbanCheck() {
             isParentConfirmed &&
             !isKanbanCheckMode
         ) {
-            selectedChildCode = ""
-            selectedChildName = ""
-            selectedLocationNumber = ""
-
-            binding.topCodeText.text = "部品QR待ち"
+            binding.topCodeText.text = t("part_wait")
             topPanel.setBackgroundColor(Color.WHITE)
             binding.topCodeText.setTextColor(Color.BLACK)
 
@@ -1117,9 +1465,10 @@ private fun processChildCode(code: String) {
             childSupplyNumbers[childKey] ?: ""
 
         binding.topCodeText.text =
-            "部品名：$selectedChildName\n" +
-                    "品番：$selectedChildCode\n" +
-                    "ロケNo.：$selectedLocationNumber"
+            t("part_name")+"：$selectedChildName\n" +
+                    t("part_code")+"：$selectedChildCode\n" +
+                    t("location")+"：$selectedLocationNumber\n"+
+                        t("Supply_number")+"：$selectedSupplyNumber"
 
         topPanel.setBackgroundColor(Color.GREEN)
         binding.topCodeText.setTextColor(Color.BLACK)
@@ -1147,36 +1496,36 @@ private fun processChildCode(code: String) {
     // 2回目：ロケQR
     // -----------------------------------------------------
 
-// -----------------------------------------------------
-// 2回目：ロケQR・供給番号照合
-// -----------------------------------------------------
+    // -----------------------------------------------------
+    // 2回目：ロケQR・供給番号照合
+    // -----------------------------------------------------
 
-// D列：ロケNo. + #
+    // D列：ロケNo. + #
     val expectedBuyCode = "${selectedChildCode}#"
 
-// E列：供給番号
+    // E列：供給番号
     val expectedSupplyCode = selectedSupplyNumber
 
-// 照合条件
+    // D列との照合
     val isLocationMatched = code == expectedBuyCode
 
-// E列：供給番号でも照合OK機能。OFFする場合は3行をコメントアウトする(下の1行も)
-// E列の供給番号による照合
+    // E列との照合（OFFにする場合は以下をコメントアウト）
     val isSupplyMatched =
         expectedSupplyCode.isNotEmpty() &&
                 code == expectedSupplyCode
 
-// E列：供給番号でも照合OK機能。OFFする場合はisSupplyMatchedをコメントアウトする
-    if (
-        isLocationMatched ||
-        isSupplyMatched
-    ) {
+    // どちらか一致すれば照合完了
+    if (isLocationMatched || isSupplyMatched) {
+
         mainHandler.removeCallbacks(clearCompletionRunnable)
+
+        // 完了音
+        playOkSound()
 
         HistoryManager.addHistory(
             this,
             mode = MODE_NAME,
-            action = "ロケQR読取",
+            action = "QR照合OK",
             parentCode = parentCode,
             childCode = code,
             method = "QR"
@@ -1220,6 +1569,12 @@ private fun processChildCode(code: String) {
     binding.statusText.text =
         "ロケQRが一致しません。\n正しいQRを読んでください"
 
+    // NG音
+    playNgSound()
+
+    // バイブレーション
+    vibrateNg()
+
     Toast.makeText(
         this,
         "ロケQRが一致しません",
@@ -1261,18 +1616,17 @@ private fun resetPracticalState() {
     requiredKanbanCounts.clear()
     scannedKanbanCounts.clear()
 
-    binding.modeText.text = "標準"
-    binding.readButton.text = "読み取り"
+    binding.modeText.text = t("standard")
+    binding.readButton.text = t("read")
+
+    binding.statusText.text = t("parent_wait")
+
+    binding.parentCodeText.text = "${t("parent")}："
+
+    binding.topCodeText.text = t("parent_wait")
     binding.readButton.isEnabled = isExcelLoaded
 
-    binding.statusText.text =
-        "親品番のQRコードを読み取ってください"
-
-    binding.parentCodeText.text = "親品番："
     binding.splitView.visibility = View.GONE
-
-    binding.topCodeText.text =
-        "親品番のQRコードを\n読み込んでください"
 
     binding.topCodeText.setTextColor(Color.BLACK)
     topPanel.setBackgroundColor(Color.WHITE)
@@ -1322,15 +1676,21 @@ override fun onPause() {
 // Destroy
 // =========================================================
 
-override fun onDestroy() {
-    super.onDestroy()
+    override fun onDestroy() {
+        super.onDestroy()
 
-    cameraProvider?.unbindAll()
+        cameraProvider?.unbindAll()
 
-    mainHandler.removeCallbacks(clearCompletionRunnable)
+        mainHandler.removeCallbacks(clearCompletionRunnable)
 
-    if (::cameraExecutor.isInitialized) {
-        cameraExecutor.shutdown()
+        if (::cameraExecutor.isInitialized) {
+            cameraExecutor.shutdown()
+        }
+
+        // 完了音出し
+        toneGenerator?.release()
+        toneGenerator = null
     }
-}
+
+// PracticalActivityクラス終了
 }

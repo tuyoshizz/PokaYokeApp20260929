@@ -8,6 +8,13 @@
     android:background="#FFFFFF"
     android:padding="8dp">
 
+    <Spinner
+        android:id="@+id/languageSpinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:entries="@array/language_list" />
+
     <!-- 上段：左側に操作ボタン、右側にカメラ -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -91,7 +98,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="親品番："
-        android:textSize="18sp"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:textColor="#000000"
         android:padding="6dp" />

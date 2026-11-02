@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">PokaYokeApp</string>
+
+    <string-array name="language_list">
+        <item>日本語</item>
+        <item>ខ្មែរ</item>
+        <item>English</item>
+    </string-array>
 </resources>

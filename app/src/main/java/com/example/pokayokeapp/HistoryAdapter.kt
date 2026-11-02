@@ -146,7 +146,7 @@ class HistoryAdapter(
 
             item.action == "親品番読取" ||
                     item.action == "親品番決定" ||
-                    item.action == "ロケQR読取" ||
+                    item.action == "QR照合OK" ||
                     item.action == "供給QR読取" ||
                     item.action == "ピッキング完了" -> {
 

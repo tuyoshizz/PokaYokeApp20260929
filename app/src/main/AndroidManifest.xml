@@ -4,6 +4,9 @@
     <!-- カメラ -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!--  バイブ  -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- ストレージ -->
     <!-- Galaxy S8などAndroid 9以前を想定 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
